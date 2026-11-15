@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kataliarc-kit"
+version = "0.2.0"
+description = "Local CLI for structured software architecture decision support"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+authors = [{name = "KatalIArc Kit contributors"}]
+dependencies = ["prompt-toolkit>=3.0"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[project.scripts]
+kataliarc = "kataliarc.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+kataliarc = ["templates/skills/*/*.md", "resources/schemas/*.json", "resources/metamodel/*.json", "resources/metamodel/*.md", "resources/metamodel/*.mmd", "resources/tactics/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

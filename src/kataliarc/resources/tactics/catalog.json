@@ -1,0 +1,119 @@
+{
+  "schema_version": "1.0",
+  "title": "KatalIArc seed catalog of architectural tactics",
+  "source": {
+    "citation": "Bass, Clements, and Kazman (2021), Software Architecture in Practice, 4th edition.",
+    "verification_status": "bibliographic source identified; tactic-to-page mapping requires local verification",
+    "use": "Candidate generation only; the catalog is not evidence that a tactic fits or will satisfy a scenario."
+  },
+  "tactics": [
+    {
+      "id": "PERF-REDUCE-DEMAND",
+      "name": "Reduce resource demand",
+      "target_attributes": ["performance"],
+      "mechanism": "Reduce the amount or frequency of work required to produce a response, for example by filtering, aggregating, or reducing repeated computation.",
+      "conditions": ["A demand source or repeated work can be identified."],
+      "limitations": ["The actual bottleneck and workload are not established without measurements."],
+      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+    },
+    {
+      "id": "PERF-MANAGE-RESOURCES",
+      "name": "Manage resources",
+      "target_attributes": ["performance"],
+      "mechanism": "Allocate, schedule, or coordinate constrained resources so competing work uses them effectively.",
+      "conditions": ["The relevant resource and contention mechanism are known."],
+      "limitations": ["Scheduling or pooling can add coordination overhead and does not create capacity."],
+      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+    },
+    {
+      "id": "PERF-INCREASE-RESOURCES",
+      "name": "Increase resources",
+      "target_attributes": ["performance"],
+      "mechanism": "Add or increase processing, memory, network, or other capacity used by the response path.",
+      "conditions": ["The constrained resource and scaling boundary are identified."],
+      "limitations": ["Additional capacity may not help when the bottleneck is elsewhere; cost and coordination may rise."],
+      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+    },
+    {
+      "id": "AVAIL-DETECT-FAULTS",
+      "name": "Detect faults",
+      "target_attributes": ["availability"],
+      "mechanism": "Detect a fault using mechanisms such as heartbeat, timeout, exception, or consistency checks.",
+      "conditions": ["Fault symptoms and detection thresholds can be defined."],
+      "limitations": ["Detection alone does not restore service and may produce false positives."],
+      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+    },
+    {
+      "id": "AVAIL-RECOVER-FAULTS",
+      "name": "Recover from faults",
+      "target_attributes": ["availability"],
+      "mechanism": "Restore service or state after a fault through recovery, reinitialization, rollback, or redundancy.",
+      "conditions": ["Recovery behavior, state ownership, and recovery objectives are understood."],
+      "limitations": ["Recovery can lose or duplicate work and depends on fault isolation and state consistency."],
+      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+    },
+    {
+      "id": "AVAIL-PREVENT-FAULTS",
+      "name": "Prevent faults",
+      "target_attributes": ["availability"],
+      "mechanism": "Reduce the probability that faults occur or propagate, using isolation, validation, or controlled removal from service.",
+      "conditions": ["Relevant fault sources and propagation paths are understood."],
+      "limitations": ["Prevention cannot eliminate all faults and may add operational complexity."],
+      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+    },
+    {
+      "id": "MOD-LOCALIZE-CHANGES",
+      "name": "Localize changes",
+      "target_attributes": ["modifiability"],
+      "mechanism": "Constrain the effects of a likely change to a small set of modules or components.",
+      "conditions": ["Change sources and the responsibilities they affect are understood."],
+      "limitations": ["Boundaries can add indirection and may not match future change patterns."],
+      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+    },
+    {
+      "id": "MOD-PREVENT-RIPPLE",
+      "name": "Prevent ripple effects",
+      "target_attributes": ["modifiability"],
+      "mechanism": "Use stable interfaces, encapsulation, or dependency control to limit propagation of a change.",
+      "conditions": ["Coupling paths and interface ownership can be identified."],
+      "limitations": ["Abstraction can become costly or misleading when it does not correspond to real variation."],
+      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+    },
+    {
+      "id": "MOD-DEFER-BINDING",
+      "name": "Defer binding time",
+      "target_attributes": ["modifiability"],
+      "mechanism": "Move a choice to a later lifecycle stage so it can be changed with less redevelopment.",
+      "conditions": ["The decision can safely remain configurable or replaceable until that stage."],
+      "limitations": ["Late binding shifts complexity to configuration, deployment, or runtime validation."],
+      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+    },
+    {
+      "id": "SEC-RESIST-ATTACKS",
+      "name": "Resist attacks",
+      "target_attributes": ["security"],
+      "mechanism": "Prevent unauthorized access or reduce attack opportunity through authentication, authorization, input validation, or isolation.",
+      "conditions": ["Assets, trust boundaries, and relevant threats are identified."],
+      "limitations": ["A control only addresses its stated threat model and can introduce usability or operational costs."],
+      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+    },
+    {
+      "id": "SEC-DETECT-ATTACKS",
+      "name": "Detect attacks",
+      "target_attributes": ["security"],
+      "mechanism": "Recognize suspicious activity through monitoring, audit, or anomaly detection and raise an actionable signal.",
+      "conditions": ["Relevant events can be observed and an operational response exists."],
+      "limitations": ["Detection does not prevent impact and may miss or misclassify activity."],
+      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+    },
+    {
+      "id": "SEC-RECOVER-ATTACKS",
+      "name": "Recover from attacks",
+      "target_attributes": ["security"],
+      "mechanism": "Restore trusted service or data after a security incident using recovery, isolation, or rollback mechanisms.",
+      "conditions": ["Recovery points, trusted state, and incident responsibilities are defined."],
+      "limitations": ["Recovery cannot undo disclosure and depends on the integrity of backups and procedures."],
+      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+    }
+  ]
+}

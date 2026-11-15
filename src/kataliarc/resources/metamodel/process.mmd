@@ -1,0 +1,81 @@
+flowchart TB
+  subgraph Stakeholder[Stakeholder]
+    S0((Start)) --> S1[Provide context, needs, requirements, and constraints]
+    S1 --> P1
+  end
+
+  subgraph Pohl[Pohl — elicit and prioritize]
+    P1[Characterize context and business problem]
+    P1 --> P2[Identify goals, requirements, constraints, and drivers]
+    P2 --> P3[Identify missing information, assumptions, and risks]
+    P3 --> P4{Is critical information missing?}
+    P4 -- Yes --> P5[Record gaps and ask targeted questions]
+    P5 --> P6{Can a responsible provisional assessment proceed?}
+    P6 -- No --> P7[Prepare validation actions; issue no architecture recommendation]
+    P7 --> PEnd((Stop pending information))
+    P6 -- Yes --> P8[Record assumptions and their decision impact]
+    P4 -- No --> P9[Confirm initial information is sufficient]
+    P8 --> P10[Elicit measurable quality scenarios]
+    P9 --> P10
+    P10 --> P11[Ask client representative to confirm priorities]
+    P11 --> P12[Record context and scenarios; group scenario IDs in utility tree]
+    P12 --> T1
+  end
+
+  subgraph Toulmin[Toulmin — design and argue]
+    T1[Consult relevant architectural knowledge]
+    T1 --> T2[Propose tactics and patterns; explain mechanisms and interactions]
+    T2 --> T3[Assemble coherent architectural alternatives]
+    T3 --> T4[Argue claims with grounds, warrant, backing, qualifier, and rebuttal]
+    T4 --> K1
+  end
+
+  subgraph WaltonEvaluation[Walton — evaluate and decide]
+    K1[Assess each alternative against scenarios and constraints]
+    K1 --> K2[Record effects, trade-offs, risks, evidence, and compliance separately]
+    K2 --> W1
+    W2 --> W4
+    W4 --> K3[Incorporate review findings and update evaluation]
+    K3 --> K4{Further review or validation needed?}
+    K4 -- Yes: design issue --> T2
+    K4 -- Yes: scenario or context changed --> P1
+    K4 -- Yes: evaluation issue --> K1
+    K4 -- No --> K5[Select the best-supported alternative, or keep outcome provisional/undetermined]
+    K5 --> K6[Record rationale, limits, open questions, and decision status]
+    K6 --> U1
+  end
+
+  subgraph WaltonReview[Walton — critical review]
+    W1[Review alternatives, assumptions, arguments, risks, and assessments]
+    W1 --> W3[Record traceable objections, evidence, or validation observations]
+    W3 --> W2
+    W4[Walton assembles and persists an ADR proposal as PROPOSED with version and source trace]
+  end
+
+  subgraph UserApproval[User / authorized decision maker]
+    U1[Review a specific ADR version]
+    U1 --> U2{Accept, reject, or request changes?}
+    U2 -- Request changes --> U3[Record feedback; set UNDER_REVIEW]
+    U3 --> T1
+    U2 -- Reject --> U4[Record REJECTED; do not index]
+    U4 --> UEnd((End: rejected))
+    U2 -- Accept --> U5[Persist ACCEPTED with approver, version, and timestamp]
+    U5 --> R1
+  end
+
+  subgraph RAG[RAG indexing]
+    R1[Prepare accepted ADR projection and provenance metadata]
+    R1 --> R2{Existing stable index key?}
+    R2 -- Yes --> R3[Verify existing remote resource]
+    R2 -- No --> R4[Upload and attach to configured vector store]
+    R3 --> R5{Vectorization completed?}
+    R4 --> R5
+    R5 -- Yes --> R6[Record INDEXED and remote IDs]
+    R5 -- No --> R7[Keep ACCEPTED; record FAILED for retry]
+    R7 --> R8[Retry safely using the stable index key]
+    R8 --> R2
+    R6 --> REnd((End: accepted and indexed))
+  end
+
+  classDef gate fill:#fff2cc,stroke:#9a7b19,color:#222;
+  class P4,P6,K4,U2,R2,R5 gate;
