@@ -16,6 +16,7 @@ REQUIRED_SECTIONS = {
     "qualitative_scenario_assessments", "evaluation_method", "risks_and_sensitivities", "tradeoffs",
     "walton_critical_questions", "objections_and_counterarguments", "evidence_and_references",
     "assumptions_and_uncertainties", "expected_consequences", "pending_verification",
+    "evaluation_iterations", "unresolved_evaluation_requests",
 }
 
 
@@ -144,9 +145,15 @@ def compose_sections(root: Path, proposal: dict | None = None) -> dict:
             "source": ".kataliarc/evaluation.json",
             "note": "This records the project's qualitative assessment; it is not proof of empirical compliance.",
         },
-        "risks_and_sensitivities": proposal.get("risks_and_sensitivities") or decision.get("risks", []),
-        "tradeoffs": proposal.get("tradeoffs") or decision.get("tradeoffs", []) or (evaluation.get("comparison", {}) or {}).get("tradeoffs", []),
-        "walton_critical_questions": _review_questions(review),
+        "risks_and_sensitivities": proposal.get("risks_and_sensitivities") or {
+            "risks": evaluation.get("risks", []) or decision.get("risks", []),
+            "sensitivity_points": evaluation.get("sensitivity_points", []),
+        },
+        "tradeoffs": proposal.get("tradeoffs") or evaluation.get("tradeoffs", []) or decision.get("tradeoffs", []) or (evaluation.get("comparison", {}) or {}).get("tradeoffs", []),
+        "walton_critical_questions": [
+            *[question for assessment in evaluation.get("assessments", []) if isinstance(assessment, dict) for question in assessment.get("critical_question_assessments", [])],
+            *_review_questions(review),
+        ],
         "objections_and_counterarguments": review.get("objections", []) if isinstance(review, dict) else [],
         "evidence_and_references": {
             "tactic_catalog_refs": [ref for tactic in tactics.get("tactics", []) if isinstance(tactic, dict) for ref in tactic.get("source_refs", [])],
@@ -156,6 +163,8 @@ def compose_sections(root: Path, proposal: dict | None = None) -> dict:
         "assumptions_and_uncertainties": proposal.get("assumptions_and_uncertainties", decision.get("unresolved_questions", [])),
         "expected_consequences": proposal.get("expected_consequences", []),
         "pending_verification": proposal.get("pending_verification", decision.get("unresolved_questions", [])),
+        "evaluation_iterations": evaluation.get("iteration_history", []),
+        "unresolved_evaluation_requests": [request for request in evaluation.get("iteration_requests", []) if isinstance(request, dict) and request.get("status", "PENDING") in {"PENDING", "UNRESOLVED"}],
     }
 
 
@@ -189,6 +198,8 @@ def render_markdown(record: dict) -> str:
         ("assumptions_and_uncertainties", "Assumptions and uncertainties"),
         ("expected_consequences", "Expected consequences"),
         ("pending_verification", "Pending verification"),
+        ("evaluation_iterations", "Evaluation and refinement history"),
+        ("unresolved_evaluation_requests", "Unresolved requests for Toulmin"),
     ]
     approvals = [item for item in record.get("approval_history", []) if item.get("version") == version["version"]]
     approval = _render_value(approvals[-1]) if approvals else "No approval recorded for this version."

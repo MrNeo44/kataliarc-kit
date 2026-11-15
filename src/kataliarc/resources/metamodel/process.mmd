@@ -30,24 +30,27 @@ flowchart TB
     T4 --> K1
   end
 
-  subgraph WaltonEvaluation[Walton — evaluate and decide]
-    K1[Assess each alternative against scenarios and constraints]
-    K1 --> K2[Record effects, trade-offs, risks, evidence, and compliance separately]
-    K2 --> W1
+  subgraph WaltonEvaluation[Walton — evaluate, critically review, and recommend]
+    K1[M1: Assess every alternative against every in-scope scenario]
+    K1 --> K2[M3: Classify direction and sufficiency; separate contribution from compliance]
+    K2 --> K3[M4: Record causal rationale, assumptions, and evidence]
+    K3 --> K31[M2: Identify supported risks, sensitivity points, and cross-scenario trade-offs]
+    K31 --> W1
     W2 --> W4
-    W4 --> K3[Incorporate review findings and update evaluation]
-    K3 --> K4{Further review or validation needed?}
+    W4 --> K32[Revise challenged assessments and preserve prior versions]
+    K32 --> K4{Further review or validation needed?}
     K4 -- Yes: design issue --> T2
     K4 -- Yes: scenario or context changed --> P1
     K4 -- Yes: evaluation issue --> K1
-    K4 -- No --> K5[Select the best-supported alternative, or keep outcome provisional/undetermined]
+    K4 -- No --> K5[Recommend best-supported alternative or keep outcome provisional/undetermined]
     K5 --> K6[Record rationale, limits, open questions, and decision status]
-    K6 --> U1
+    K6 --> K7[Persist ADR proposal as PROPOSED]
+    K7 --> U1
   end
 
   subgraph WaltonReview[Walton — critical review]
-    W1[Review alternatives, assumptions, arguments, risks, and assessments]
-    W1 --> W3[Record traceable objections, evidence, or validation observations]
+    W1[M5: Apply Walton questions to practical, causal, analogy, expert, and consequence claims]
+    W1 --> W3[Record answers, claim references, evidence, objections, and outcomes]
     W3 --> W2
     W4[Walton assembles and persists an ADR proposal as PROPOSED with version and source trace]
   end

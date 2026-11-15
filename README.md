@@ -45,7 +45,7 @@ Generated artifacts and requested responses support English (`en`) and Spanish (
 
 ## Integrations
 
-KatalIArc installs three skills—Pohl, Toulmin, and Walton—in each provider's skill directory, along with project instructions. Walton owns scenario evaluation, Walton-style critical review, and recommendations. Codex uses `AGENTS.md`; Claude Code uses `CLAUDE.md`; Gemini CLI uses `GEMINI.md` and a TOML command; GitHub Copilot for VS Code uses `.github/copilot-instructions.md`, skills, and a custom agent definition. KatalIArc does not install or authenticate provider software. Methodological role/action commands invoke the configured local CLI and require separate authentication.
+KatalIArc installs three skills—Pohl, Toulmin, and Walton—in each provider's skill directory, along with project instructions. For Codex, project skills go in `.agents/skills/kataliarc-pohl/`, `.agents/skills/kataliarc-toulmin/`, and `.agents/skills/kataliarc-walton/`; project-wide instructions go in `AGENTS.md`. Walton owns scenario evaluation, Walton-style critical review, and recommendations. Claude Code uses `CLAUDE.md`; Gemini CLI uses `GEMINI.md` and a TOML command; GitHub Copilot for VS Code uses `.github/copilot-instructions.md`, skills, and a custom agent definition. KatalIArc does not install or authenticate provider software. Methodological role/action commands invoke the configured local CLI and require separate authentication.
 
 ## Commands
 
@@ -77,9 +77,9 @@ kataliarc update --global --dry-run
 | `pohl elicit` | Collects context and quality scenarios | Pohl |
 | `pohl prioritize` | Organizes the utility tree and priorities | Pohl, with client confirmation |
 | `toulmin design` | Proposes tactics and argued alternatives | Toulmin |
-| `walton evaluate` | Evaluates scenarios and trade-offs | Walton |
-| `walton review` | Critiques argument quality with Walton's critical questions | Walton |
-| `walton decide` | Integrates the review and recommends a decision | Walton |
+| `walton evaluate` | Assesses every alternative against every in-scope scenario; records contribution separately from compliance, plus risks, sensitivity points, and trade-offs | Walton (ATAM + qualitative NFR/GRL contribution semantics) |
+| `walton review` | Applies explicit Walton critical-question schemes to causal claims, evidence, assumptions, analogies, and consequences | Walton |
+| `walton decide` | Integrates findings and recommends a supported, provisional, or indeterminate outcome | Walton |
 | `validate` | Checks artifact structure and some references | None; automatic validation |
 | `status` | Shows artifact status | None; local status check |
 | `rag-test` | Makes one read-only search against the configured ADR vector store | None; diagnostic query only |
@@ -130,9 +130,13 @@ The role determines the methodological skill, and the action determines the phas
 | --- | --- | --- | --- |
 | Pohl | Elicit stakeholder context, business problem/goals/requirements, constraints, drivers, and quality scenarios; expose gaps and confirm priorities | `Stakeholder`, `BusinessProblem`, `BusinessGoal`, `BusinessRequirement`, `ArchitecturalProblem`, `ArchitecturalConstraint`, `ArchitecturalDriver`, `QualityScenario`, `UtilityTreeBranch` | Toulmin receives traceable scenarios and constraints; priorities remain in `context.json` |
 | Toulmin | Generate tactics, arguments, interactions, and assembled alternatives | `ArchitecturalTactic`, `ArchitecturalPattern`, `ArchitecturalArgument`, `ArchitecturalAlternative` | Walton evaluates the alternatives |
-| Walton | Assess alternatives against scenarios, compare trade-offs, critique argument quality, and recommend a decision | `ScenarioAssessment`, `DecisionOutcome`, `ArchitecturalArgument`, `ArchitecturalRisk`, `TradeOff` | User or authorized decision maker accepts, rejects, or requests changes |
+| Walton | Assess every alternative/scenario pair using the versioned qualitative rubric; identify ATAM risks, sensitivity points, and cross-scenario trade-offs; apply Walton critical questions; recommend an outcome | `ScenarioAssessment`, `SensitivityPoint`, `CriticalQuestionAssessment`, `EvaluationIteration`, `ArchitecturalRisk`, `TradeOff` | User or authorized decision maker accepts, rejects, or requests changes |
 
-Each skill file states its scope, inputs, outputs, and handoff. KatalIArc installs the machine-readable domain vocabulary in `.kataliarc/metamodel/domain.json`, its entity diagram in `domain.mmd`, the process guidance in `process.md`, and its activity diagram in `process.mmd`. `domain.json` is the single metamodel source; schemas validate the structure of individual artifacts, including ADRs. Each skill is instructed to read the shared process and use only its relevant concepts.
+Each skill file states its scope, inputs, outputs, and handoff. KatalIArc installs the machine-readable domain vocabulary in `.kataliarc/metamodel/domain.json`, its entity diagram in `domain.mmd`, the process guidance in `process.md`, and its activity diagram in `process.mmd`. `domain.json` is the single metamodel source; `walton-rubric.json` is the versioned qualitative classification contract. Schemas validate artifact structure. Each skill is instructed to read the shared process and use only its relevant concepts.
+
+Walton assesses the complete alternative directly against each quality scenario; tactic labels are not summed. The qualitative labels (`MAKE`, `HELP`, `SomePositive`, `HURT`, `BREAK`, `SomeNegative`, `UNKNOWN`, `NEUTRAL`) encode direction and sufficiency only. Compliance remains a separate state and requires evidence for verified outcomes. The CLI checks scenario-pair coverage, references, causal justification fields, and the direction/sufficiency-to-label mapping, but structural validation does not prove that a causal claim is true.
+
+Walton's bounded refinement loop can ask Toulmin for revised tactics, combinations, evidence, or arguments and then reevaluate. Configure `{"walton": {"max_iterations": 2}}` in `.kataliarc/config.json`; the default is 3 and the maximum is 5. Requests still open at the limit are recorded unresolved. The loop never accepts an ADR or automatically selects a winner.
 
 ### Toulmin design and historical ADR search
 

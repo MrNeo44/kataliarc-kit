@@ -12,191 +12,767 @@
     "Do not infer client priorities. A stakeholder representative must confirm priority values."
   ],
   "enums": {
-    "priority": ["A", "M", "B", "pendiente"],
-    "evidence_status": ["documentada", "inferencia/hipótesis", "desconocida"],
-    "decision_status": ["definitivo", "provisional", "indeterminado"],
-    "assessment_direction": ["favorable", "condicionado", "desfavorable", "indeterminado"],
-    "compliance_status": ["verificado", "provisional", "incumplido", "desconocido"],
-    "adr_status": ["PROPOSED", "UNDER_REVIEW", "ACCEPTED", "REJECTED", "SUPERSEDED"],
-    "indexing_status": ["NOT_REQUESTED", "PENDING", "INDEXING", "INDEXED", "FAILED"]
+    "priority": [
+      "A",
+      "M",
+      "B",
+      "pendiente"
+    ],
+    "evidence_status": [
+      "documentada",
+      "inferencia/hipótesis",
+      "desconocida"
+    ],
+    "decision_status": [
+      "definitivo",
+      "provisional",
+      "indeterminado"
+    ],
+    "assessment_direction": [
+      "favorable",
+      "condicionado",
+      "desfavorable",
+      "indeterminado"
+    ],
+    "compliance_status": [
+      "VERIFIED_SATISFIED",
+      "VERIFIED_UNSATISFIED",
+      "PREDICTED_UNDER_ASSUMPTIONS",
+      "UNVERIFIED"
+    ],
+    "adr_status": [
+      "PROPOSED",
+      "UNDER_REVIEW",
+      "ACCEPTED",
+      "REJECTED",
+      "SUPERSEDED"
+    ],
+    "indexing_status": [
+      "NOT_REQUESTED",
+      "PENDING",
+      "INDEXING",
+      "INDEXED",
+      "FAILED"
+    ],
+    "contribution_direction": [
+      "POSITIVE",
+      "NEGATIVE",
+      "NEUTRAL",
+      "UNKNOWN"
+    ],
+    "contribution_sufficiency": [
+      "SUFFICIENT",
+      "INSUFFICIENT",
+      "UNKNOWN"
+    ],
+    "contribution_label": [
+      "MAKE (++)",
+      "HELP (+)",
+      "SomePositive",
+      "HURT (-)",
+      "BREAK (--)",
+      "SomeNegative",
+      "UNKNOWN (?)",
+      "NEUTRAL (0)"
+    ]
   },
   "entities": {
     "Stakeholder": {
       "description": "A person or group that provides context, has concerns, or confirms priorities or decisions.",
-      "attributes": {"id": "string", "name": "string", "role": "string"}
+      "attributes": {
+        "id": "string",
+        "name": "string",
+        "role": "string"
+      }
     },
     "BusinessProblem": {
       "description": "The business or user problem that motivates the architecture work.",
-      "attributes": {"id": "string", "description": "string", "provenance": "string"}
+      "attributes": {
+        "id": "string",
+        "description": "string",
+        "provenance": "string"
+      }
     },
     "BusinessGoal": {
       "description": "An intended business outcome and, when available, its measure of success.",
-      "attributes": {"id": "string", "description": "string", "success_measure": "string or unknown"}
+      "attributes": {
+        "id": "string",
+        "description": "string",
+        "success_measure": "string or unknown"
+      }
     },
     "BusinessRequirement": {
       "description": "A business-level need or obligation that informs the architectural problem.",
-      "attributes": {"id": "string", "description": "string", "priority": "priority or unknown", "provenance": "string"}
+      "attributes": {
+        "id": "string",
+        "description": "string",
+        "priority": "priority or unknown",
+        "provenance": "string"
+      }
     },
     "ArchitecturalProblem": {
       "description": "The architecture problem to solve, derived from business context and drivers.",
-      "attributes": {"id": "string", "description": "string", "missing_information": "string[]", "assumptions": "string[]"}
+      "attributes": {
+        "id": "string",
+        "description": "string",
+        "missing_information": "string[]",
+        "assumptions": "string[]"
+      }
     },
     "ArchitecturalContext": {
       "description": "System boundary, team capabilities, technology environment, and other context relevant to reasoning.",
-      "attributes": {"system_domain": "string", "team_capabilities": "string", "technology_environment": "string"}
+      "attributes": {
+        "system_domain": "string",
+        "team_capabilities": "string",
+        "technology_environment": "string"
+      }
     },
     "ArchitecturalConstraint": {
       "description": "A restriction that limits acceptable architectural choices.",
-      "attributes": {"id": "string", "description": "string", "mandatory": "boolean", "provenance": "string", "evidence_status": "evidence_status"}
+      "attributes": {
+        "id": "string",
+        "description": "string",
+        "mandatory": "boolean",
+        "provenance": "string",
+        "evidence_status": "evidence_status"
+      }
     },
     "QualityAttribute": {
       "description": "A quality concern such as performance, availability, modifiability, or security.",
-      "attributes": {"name": "string", "definition": "string"}
+      "attributes": {
+        "name": "string",
+        "definition": "string"
+      }
     },
     "QualityScenario": {
       "description": "A measurable scenario that makes a quality concern actionable.",
-      "attributes": {"id": "string", "stimulus": "string", "environment": "string", "response": "string", "response_measure": "string", "importance": "priority or unknown", "difficulty": "priority or unknown", "acceptance_criteria": "string", "known_context": "string[]", "missing_information": "string[]", "mandatory": "boolean", "provenance": "string", "evidence_status": "evidence_status"}
+      "attributes": {
+        "id": "string",
+        "stimulus": "string",
+        "environment": "string",
+        "response": "string",
+        "response_measure": "string or {metric, operator, value, unit}",
+        "importance": "priority or unknown",
+        "difficulty": "priority or unknown",
+        "acceptance_criteria": "string",
+        "known_context": "string[]",
+        "missing_information": "string[]",
+        "mandatory": "boolean",
+        "provenance": "string",
+        "evidence_status": "evidence_status",
+        "source": "string",
+        "artifact": "string",
+        "constraints": "string[]",
+        "business_relevance": "string"
+      }
     },
     "ArchitecturalDriver": {
       "description": "A requirement, quality scenario, or constraint with material influence on architecture decisions.",
-      "attributes": {"id": "string", "description": "string", "priority": "priority or unknown", "provenance": "string"}
+      "attributes": {
+        "id": "string",
+        "description": "string",
+        "priority": "priority or unknown",
+        "provenance": "string"
+      }
     },
     "ArchitecturalKnowledge": {
       "description": "Knowledge that may inform architectural reasoning; applicability must be assessed for the current project.",
-      "attributes": {"id": "string", "description": "string", "source_ref": "string", "evidence_status": "evidence_status"}
+      "attributes": {
+        "id": "string",
+        "description": "string",
+        "source_ref": "string",
+        "evidence_status": "evidence_status"
+      }
     },
     "ExplicitArchitecturalKnowledge": {
       "description": "Recorded knowledge such as styles, tactics, patterns, or documented project experience.",
-      "attributes": {"kind": "string"}
+      "attributes": {
+        "kind": "string"
+      }
     },
     "TacitArchitecturalKnowledge": {
       "description": "Experience-based knowledge such as expert heuristics or practitioner judgment; treat as a hypothesis until supported.",
-      "attributes": {"kind": "string", "provenance": "string"}
+      "attributes": {
+        "kind": "string",
+        "provenance": "string"
+      }
     },
     "ArchitecturalStyle": {
       "description": "A broad organization of system elements and relationships.",
-      "attributes": {"id": "string", "name": "string", "description": "string"}
+      "attributes": {
+        "id": "string",
+        "name": "string",
+        "description": "string"
+      }
     },
     "ReferenceArchitecture": {
       "description": "A reusable reference structure for a domain or class of systems.",
-      "attributes": {"id": "string", "name": "string", "description": "string", "source_ref": "string"}
+      "attributes": {
+        "id": "string",
+        "name": "string",
+        "description": "string",
+        "source_ref": "string"
+      }
     },
     "ArchitecturalTactic": {
       "description": "A design decision that influences a quality attribute through a stated mechanism.",
-      "attributes": {"id": "string", "name": "string", "mechanism": "string", "target_attributes": "string[]", "conditions": "string[]", "source_refs": "string[]"}
+      "attributes": {
+        "id": "string",
+        "name": "string",
+        "mechanism": "string",
+        "target_attributes": "string[]",
+        "conditions": "string[]",
+        "source_refs": "string[]"
+      }
     },
     "ArchitecturalPattern": {
       "description": "A reusable high-level structure with components and connectors.",
-      "attributes": {"id": "string", "name": "string", "structure": "string", "components": "string[]", "connectors": "string[]", "source_refs": "string[]"}
+      "attributes": {
+        "id": "string",
+        "name": "string",
+        "structure": "string",
+        "components": "string[]",
+        "connectors": "string[]",
+        "source_refs": "string[]"
+      }
     },
     "ExpertHeuristic": {
       "description": "An experience-based conditional recommendation, not established evidence by itself.",
-      "attributes": {"id": "string", "condition": "string", "recommendation": "string", "provenance": "string", "evidence_status": "evidence_status"}
+      "attributes": {
+        "id": "string",
+        "condition": "string",
+        "recommendation": "string",
+        "provenance": "string",
+        "evidence_status": "evidence_status"
+      }
     },
     "ProjectExperience": {
       "description": "A recorded experience from a prior project and its observed outcome.",
-      "attributes": {"id": "string", "project_context": "string", "observed_outcome": "string", "source_ref": "string", "evidence_status": "evidence_status"}
+      "attributes": {
+        "id": "string",
+        "project_context": "string",
+        "observed_outcome": "string",
+        "source_ref": "string",
+        "evidence_status": "evidence_status"
+      }
     },
     "PatternTacticInteraction": {
       "description": "How a tactic fits, changes, or is constrained by a pattern.",
-      "attributes": {"fit_label": "string", "change_type": "string", "required_changes": "string[]", "preconditions": "string[]", "source_refs": "string[]", "hypotheses": "string[]"}
+      "attributes": {
+        "fit_label": "string",
+        "change_type": "string",
+        "required_changes": "string[]",
+        "preconditions": "string[]",
+        "source_refs": "string[]",
+        "hypotheses": "string[]"
+      }
     },
     "TacticInteraction": {
       "description": "A positive, negative, or conditional interaction among tactics and affected scenarios.",
-      "attributes": {"kind": "string", "mechanism": "string", "positive_effects": "string[]", "negative_effects": "string[]", "conditions": "string[]", "mitigations": "string[]", "status": "string", "source_refs": "string[]"}
+      "attributes": {
+        "kind": "string",
+        "mechanism": "string",
+        "positive_effects": "string[]",
+        "negative_effects": "string[]",
+        "conditions": "string[]",
+        "mitigations": "string[]",
+        "status": "string",
+        "source_refs": "string[]"
+      }
     },
     "ArchitecturalAlternative": {
       "description": "A coherent candidate architecture assembled from patterns and tactics.",
-      "attributes": {"id": "string", "description": "string", "assembly_relations": "string[]", "assumptions": "string[]"}
+      "attributes": {
+        "id": "string",
+        "description": "string",
+        "assembly_relations": "string[]",
+        "assumptions": "string[]"
+      }
     },
     "ArchitecturalRisk": {
       "description": "An uncertain condition that could negatively affect an alternative or decision.",
-      "attributes": {"id": "string", "description": "string", "severity": "string", "provenance": "string", "evidence_status": "evidence_status"}
+      "attributes": {
+        "id": "string",
+        "description": "string",
+        "severity": "string",
+        "provenance": "string",
+        "evidence_status": "evidence_status",
+        "decision_id": "string",
+        "scenario_ids": "string[]",
+        "causal_mechanism": "string",
+        "consequence": "string",
+        "evidence": "object[]",
+        "status": "CONFIRMED_CONDITION | HYPOTHETICAL | CANDIDATE",
+        "mitigation": "string"
+      }
     },
     "TradeOff": {
       "description": "A consequence where improving one concern may worsen another.",
-      "attributes": {"id": "string", "description": "string", "affected_scenario_ids": "string[]"}
+      "attributes": {
+        "id": "string",
+        "description": "string",
+        "affected_scenario_ids": "string[]",
+        "decision_id": "string",
+        "property": "string",
+        "positive_effects": "object[]",
+        "negative_effects": "object[]",
+        "shared_mechanism": "string",
+        "business_priorities": "object[]",
+        "assumptions": "string[]",
+        "evidence": "object[]",
+        "mitigations": "string[]"
+      }
     },
     "ScenarioAssessment": {
       "diagram_name": "AlternativeAssessment",
-      "description": "A qualitative assessment of an alternative against a scenario.",
-      "attributes": {"alternative_id": "string", "scenario_id": "string", "direction": "assessment_direction", "rationale": "string", "evidence_status": "evidence_status", "compliance_status": "compliance_status"}
+      "description": "Direct qualitative contribution assessment for one alternative and one ATAM quality scenario; one record per pair.",
+      "attributes": {
+        "alternative_id": "string",
+        "scenario_id": "string",
+        "direction": "assessment_direction",
+        "rationale": "string",
+        "evidence_status": "evidence_status",
+        "compliance_status": "compliance_status",
+        "tactic_ids": "string[]",
+        "design_decision": "string",
+        "contribution_direction": "POSITIVE | NEGATIVE | NEUTRAL | UNKNOWN",
+        "sufficiency": "SUFFICIENT | INSUFFICIENT | UNKNOWN",
+        "contribution_label": "MAKE (++) | HELP (+) | SomePositive | HURT (-) | BREAK (--) | SomeNegative | UNKNOWN (?) | NEUTRAL (0)",
+        "causal_justification": "object",
+        "assumptions": "string[]",
+        "objections": "object[]",
+        "critical_question_assessments": "CriticalQuestionAssessment[]",
+        "rubric_version": "string"
+      }
     },
     "DecisionRationale": {
       "description": "The reasons, uncertainties, and evidence supporting a decision outcome.",
-      "attributes": {"justification": "string", "uncertainties": "string[]", "source_refs": "string[]"}
+      "attributes": {
+        "justification": "string",
+        "uncertainties": "string[]",
+        "source_refs": "string[]"
+      }
     },
     "ArchitecturalDecision": {
       "description": "A recorded selection or disposition of an architectural alternative.",
-      "attributes": {"id": "string", "status": "decision_status", "decision_date": "date or unknown", "selected_alternative_id": "string or unknown", "tradeoffs": "string[]", "risks": "string[]", "unresolved_questions": "string[]"}
+      "attributes": {
+        "id": "string",
+        "status": "decision_status",
+        "decision_date": "date or unknown",
+        "selected_alternative_id": "string or unknown",
+        "tradeoffs": "string[]",
+        "risks": "string[]",
+        "unresolved_questions": "string[]"
+      }
     },
     "ArchitectureDecisionRecord": {
       "description": "A versioned, persistent decision proposal and its approval and retrieval-indexing history. The local JSON and Markdown are authoritative; a vector-store copy is only a retrieval projection.",
-      "attributes": {"adr_id": "string", "project_id": "string", "origin": "string", "status": "adr_status", "current_version": "ADRVersion", "versions": "ADRVersion[]", "history": "object[]", "approval_history": "object[]", "indexing": "object", "supersedes": "ADR ID or unknown"}
+      "attributes": {
+        "adr_id": "string",
+        "project_id": "string",
+        "origin": "string",
+        "status": "adr_status",
+        "current_version": "ADRVersion",
+        "versions": "ADRVersion[]",
+        "history": "object[]",
+        "approval_history": "object[]",
+        "indexing": "object",
+        "supersedes": "ADR ID or unknown"
+      }
     },
     "ADRVersion": {
       "description": "An immutable version of an ADR proposal with traceable source artifacts.",
-      "attributes": {"version": "integer", "created_at": "date-time", "title": "string", "sections": "ADRContent", "source_artifacts": "string[]"}
+      "attributes": {
+        "version": "integer",
+        "created_at": "date-time",
+        "title": "string",
+        "sections": "ADRContent",
+        "source_artifacts": "string[]"
+      }
     },
     "ADRContent": {
       "description": "Structured decision content that preserves the evidence chain from business context through assessment and review.",
-      "attributes": {"architectural_problem": "string or object", "business_context_and_objectives": "object", "quality_scenarios": "QualityScenario[]", "constraints": "ArchitecturalConstraint[]", "selected_tactics": "ArchitecturalTactic[]", "alternatives_considered": "object", "recommended_decision": "string or object", "toulmin_arguments": "ArchitecturalArgument[]", "qualitative_scenario_assessments": "ScenarioAssessment[]", "evaluation_method": "object", "risks_and_sensitivities": "ArchitecturalRisk[]", "tradeoffs": "TradeOff[]", "walton_critical_questions": "object[]", "objections_and_counterarguments": "object[]", "evidence_and_references": "object", "assumptions_and_uncertainties": "string[]", "expected_consequences": "string[]", "pending_verification": "string[]"}
+      "attributes": {
+        "architectural_problem": "string or object",
+        "business_context_and_objectives": "object",
+        "quality_scenarios": "QualityScenario[]",
+        "constraints": "ArchitecturalConstraint[]",
+        "selected_tactics": "ArchitecturalTactic[]",
+        "alternatives_considered": "object",
+        "recommended_decision": "string or object",
+        "toulmin_arguments": "ArchitecturalArgument[]",
+        "qualitative_scenario_assessments": "ScenarioAssessment[]",
+        "evaluation_method": "object",
+        "risks_and_sensitivities": "ArchitecturalRisk[]",
+        "tradeoffs": "TradeOff[]",
+        "walton_critical_questions": "object[]",
+        "objections_and_counterarguments": "object[]",
+        "evidence_and_references": "object",
+        "assumptions_and_uncertainties": "string[]",
+        "expected_consequences": "string[]",
+        "pending_verification": "string[]"
+      }
     },
     "ArchitecturalArgument": {
       "description": "A traceable argument for an architectural claim using grounds, warrant, backing, qualifier, and rebuttal.",
-      "attributes": {"claim": "string", "grounds": "string[]", "warrant": "string", "backing": "string[]", "qualifier": "string", "rebuttal": "string[]", "source_refs": "string[]", "evidence_status": "evidence_status"}
+      "attributes": {
+        "claim": "string",
+        "grounds": "string[]",
+        "warrant": "string",
+        "backing": "string[]",
+        "qualifier": "string",
+        "rebuttal": "string[]",
+        "source_refs": "string[]",
+        "evidence_status": "evidence_status"
+      }
     },
     "UtilityTreeBranch": {
       "description": "An index grouping scenario IDs by quality attribute; it does not duplicate scenario details or priorities.",
-      "attributes": {"quality_attribute": "string", "scenario_ids": "string[]"}
+      "attributes": {
+        "quality_attribute": "string",
+        "scenario_ids": "string[]"
+      }
+    },
+    "SensitivityPoint": {
+      "description": "An architectural property whose variation may materially affect a quality-scenario response; candidates are explicitly labeled.",
+      "attributes": {
+        "id": "string",
+        "property": "string",
+        "scenario_id": "string",
+        "response_measure": "object or string",
+        "causal_mechanism": "string",
+        "variation_effect": "string",
+        "status": "SUPPORTED | CANDIDATE",
+        "evidence": "object[]"
+      }
+    },
+    "CriticalQuestionAssessment": {
+      "description": "A recorded Walton critical question applied to a specific claim, with response and evidence.",
+      "attributes": {
+        "scheme": "string",
+        "question": "string",
+        "claim_ref": "string",
+        "answer": "string",
+        "result": "supported | challenged | unresolved",
+        "evidence_refs": "string[]",
+        "objection": "string or null"
+      }
+    },
+    "EvaluationIteration": {
+      "description": "A bounded Toulmin refinement and Walton reevaluation event; stores artifact-level observations, not private model reasoning.",
+      "attributes": {
+        "iteration": "integer",
+        "action": "string",
+        "observation": "string",
+        "source_artifacts": "string[]",
+        "outcome": "string"
+      }
     }
   },
   "relationships": [
-    {"from": "Stakeholder", "to": "BusinessProblem", "name": "provides_or_is_affected_by", "cardinality": {"stakeholder": "1..*", "business_problem": "0..*"}, "meaning": "Stakeholders provide context about or are affected by business problems."},
-    {"from": "BusinessProblem", "to": "BusinessGoal", "name": "motivates", "meaning": "A business problem motivates one or more business goals."},
-    {"from": "BusinessGoal", "to": "BusinessRequirement", "name": "informs", "meaning": "Goals inform business requirements."},
-    {"from": "BusinessRequirement", "to": "ArchitecturalProblem", "name": "contributes_to", "meaning": "Requirements contribute to framing the architectural problem."},
-    {"from": "ArchitecturalProblem", "to": "ArchitecturalContext", "name": "is_understood_in", "meaning": "The problem is considered in its system and team context."},
-    {"from": "ArchitecturalProblem", "to": "ArchitecturalConstraint", "name": "is_limited_by", "meaning": "Constraints restrict acceptable solutions."},
-    {"from": "ArchitecturalProblem", "to": "ArchitecturalDriver", "name": "is_influenced_by", "meaning": "Drivers shape the architectural response."},
-    {"from": "ArchitecturalDriver", "to": "QualityScenario", "name": "includes", "meaning": "Quality scenarios can be architectural drivers."},
-    {"from": "QualityScenario", "to": "QualityAttribute", "name": "characterizes", "meaning": "Each quality scenario concerns a quality attribute."},
-    {"from": "UtilityTreeBranch", "to": "QualityScenario", "name": "indexes_by_id", "meaning": "The utility tree groups scenario IDs under quality attributes without copying scenario content."},
-    {"from": "ArchitecturalKnowledge", "to": "ArchitecturalProblem", "name": "may_inform", "meaning": "Knowledge may inform reasoning; current applicability must be argued, not assumed."},
-    {"from": "ExplicitArchitecturalKnowledge", "to": "ArchitecturalKnowledge", "name": "is_a", "meaning": "Explicit architectural knowledge is a kind of architectural knowledge."},
-    {"from": "TacitArchitecturalKnowledge", "to": "ArchitecturalKnowledge", "name": "is_a", "meaning": "Tacit architectural knowledge is a kind of architectural knowledge."},
-    {"from": "ExplicitArchitecturalKnowledge", "to": "ArchitecturalStyle", "name": "includes", "meaning": "Explicit knowledge may include architectural styles."},
-    {"from": "ExplicitArchitecturalKnowledge", "to": "ReferenceArchitecture", "name": "includes", "meaning": "Explicit knowledge may include reference architectures."},
-    {"from": "ExplicitArchitecturalKnowledge", "to": "ArchitecturalTactic", "name": "includes", "meaning": "Explicit knowledge may include architectural tactics."},
-    {"from": "ExplicitArchitecturalKnowledge", "to": "ArchitecturalPattern", "name": "includes", "meaning": "Explicit knowledge may include architectural patterns."},
-    {"from": "ArchitecturalStyle", "to": "ArchitecturalPattern", "name": "may_be_realized_by", "meaning": "A style may be represented or combined through patterns."},
-    {"from": "ReferenceArchitecture", "to": "ArchitecturalPattern", "name": "may_contain_or_inspire", "meaning": "A reference architecture may contain or inspire patterns."},
-    {"from": "ArchitecturalPattern", "to": "PatternTacticInteraction", "name": "participates_in", "meaning": "Pattern and tactic fit or change is recorded by PatternTacticInteraction."},
-    {"from": "ArchitecturalTactic", "to": "PatternTacticInteraction", "name": "participates_in", "meaning": "Pattern and tactic fit or change is recorded by PatternTacticInteraction."},
-    {"from": "PatternTacticInteraction", "to": "TacticInteraction", "name": "contributes_to", "meaning": "Pattern/tactic implications can inform the overall interaction analysis."},
-    {"from": "ArchitecturalTactic", "to": "QualityScenario", "name": "targets_or_affects", "meaning": "Tactics target quality attributes and may affect scenarios positively or negatively."},
-    {"from": "ArchitecturalTactic", "to": "TacticInteraction", "name": "interacts_with", "meaning": "Tactics may interact; effects are recorded in TacticInteraction."},
-    {"from": "TacticInteraction", "to": "QualityScenario", "name": "affects", "meaning": "Interactions record affected scenarios and consequences."},
-    {"from": "ArchitecturalAlternative", "to": "ArchitecturalPattern", "name": "assembles", "meaning": "An alternative assembles zero or more patterns."},
-    {"from": "ArchitecturalAlternative", "to": "ArchitecturalTactic", "name": "uses", "meaning": "An alternative uses one or more tactics."},
-    {"from": "ArchitecturalAlternative", "to": "ScenarioAssessment", "name": "is_assessed_by", "meaning": "Alternatives are assessed against quality scenarios."},
-    {"from": "ScenarioAssessment", "to": "QualityScenario", "name": "assesses_against", "meaning": "An assessment references the scenario it evaluates."},
-    {"from": "ArchitecturalAlternative", "to": "ArchitecturalRisk", "name": "may_have", "meaning": "Alternatives may have risks and trade-offs."},
-    {"from": "ArchitecturalAlternative", "to": "TradeOff", "name": "has_tradeoff", "meaning": "Alternatives may involve trade-offs."},
-    {"from": "ArchitecturalDecision", "to": "ArchitecturalAlternative", "name": "selects_or_defers", "meaning": "A decision selects an alternative or records that selection is provisional or undetermined."},
-    {"from": "ArchitecturalDecision", "to": "DecisionRationale", "name": "is_justified_by", "meaning": "The rationale records justification, uncertainty, and supporting references."},
-    {"from": "ArchitecturalDecision", "to": "TradeOff", "name": "records", "meaning": "A decision records the trade-offs it accepts."},
-    {"from": "ArchitectureDecisionRecord", "to": "ArchitecturalDecision", "name": "records", "meaning": "The ADR persists a proposed or accepted architectural decision and its traceable rationale."},
-    {"from": "ArchitectureDecisionRecord", "to": "ADRVersion", "name": "has_versions", "meaning": "Every revision is preserved as an immutable ADR version."},
-    {"from": "ADRVersion", "to": "ADRContent", "name": "contains", "meaning": "A version contains a structured decision proposal."},
-    {"from": "ADRContent", "to": "QualityScenario", "name": "traces", "meaning": "ADR content references the quality scenarios considered."},
-    {"from": "ADRContent", "to": "ArchitecturalTactic", "name": "records_selected_tactics", "meaning": "ADR content records the selected tactics and their sources."},
-    {"from": "ADRContent", "to": "ArchitecturalArgument", "name": "preserves_arguments", "meaning": "ADR content preserves the Toulmin arguments."},
-    {"from": "ADRContent", "to": "ScenarioAssessment", "name": "preserves_assessments", "meaning": "ADR content preserves qualitative scenario assessments."},
-    {"from": "ADRContent", "to": "ArchitecturalRisk", "name": "records_risks", "meaning": "ADR content records risks and sensitivity points."},
-    {"from": "ADRContent", "to": "TradeOff", "name": "records_tradeoffs", "meaning": "ADR content records accepted trade-offs."},
-    {"from": "ArchitecturalArgument", "to": "ArchitecturalAlternative", "name": "supports_or_qualifies", "meaning": "Arguments support or qualify alternatives and their design claims."},
-    {"from": "ExpertHeuristic", "to": "TacitArchitecturalKnowledge", "name": "is_a", "meaning": "An expert heuristic is a form of tacit architectural knowledge."},
-    {"from": "ProjectExperience", "to": "TacitArchitecturalKnowledge", "name": "is_a", "meaning": "Project experience is a form of tacit architectural knowledge."}
+    {
+      "from": "Stakeholder",
+      "to": "BusinessProblem",
+      "name": "provides_or_is_affected_by",
+      "cardinality": {
+        "stakeholder": "1..*",
+        "business_problem": "0..*"
+      },
+      "meaning": "Stakeholders provide context about or are affected by business problems."
+    },
+    {
+      "from": "BusinessProblem",
+      "to": "BusinessGoal",
+      "name": "motivates",
+      "meaning": "A business problem motivates one or more business goals."
+    },
+    {
+      "from": "BusinessGoal",
+      "to": "BusinessRequirement",
+      "name": "informs",
+      "meaning": "Goals inform business requirements."
+    },
+    {
+      "from": "BusinessRequirement",
+      "to": "ArchitecturalProblem",
+      "name": "contributes_to",
+      "meaning": "Requirements contribute to framing the architectural problem."
+    },
+    {
+      "from": "ArchitecturalProblem",
+      "to": "ArchitecturalContext",
+      "name": "is_understood_in",
+      "meaning": "The problem is considered in its system and team context."
+    },
+    {
+      "from": "ArchitecturalProblem",
+      "to": "ArchitecturalConstraint",
+      "name": "is_limited_by",
+      "meaning": "Constraints restrict acceptable solutions."
+    },
+    {
+      "from": "ArchitecturalProblem",
+      "to": "ArchitecturalDriver",
+      "name": "is_influenced_by",
+      "meaning": "Drivers shape the architectural response."
+    },
+    {
+      "from": "ArchitecturalDriver",
+      "to": "QualityScenario",
+      "name": "includes",
+      "meaning": "Quality scenarios can be architectural drivers."
+    },
+    {
+      "from": "QualityScenario",
+      "to": "QualityAttribute",
+      "name": "characterizes",
+      "meaning": "Each quality scenario concerns a quality attribute."
+    },
+    {
+      "from": "UtilityTreeBranch",
+      "to": "QualityScenario",
+      "name": "indexes_by_id",
+      "meaning": "The utility tree groups scenario IDs under quality attributes without copying scenario content."
+    },
+    {
+      "from": "ArchitecturalKnowledge",
+      "to": "ArchitecturalProblem",
+      "name": "may_inform",
+      "meaning": "Knowledge may inform reasoning; current applicability must be argued, not assumed."
+    },
+    {
+      "from": "ExplicitArchitecturalKnowledge",
+      "to": "ArchitecturalKnowledge",
+      "name": "is_a",
+      "meaning": "Explicit architectural knowledge is a kind of architectural knowledge."
+    },
+    {
+      "from": "TacitArchitecturalKnowledge",
+      "to": "ArchitecturalKnowledge",
+      "name": "is_a",
+      "meaning": "Tacit architectural knowledge is a kind of architectural knowledge."
+    },
+    {
+      "from": "ExplicitArchitecturalKnowledge",
+      "to": "ArchitecturalStyle",
+      "name": "includes",
+      "meaning": "Explicit knowledge may include architectural styles."
+    },
+    {
+      "from": "ExplicitArchitecturalKnowledge",
+      "to": "ReferenceArchitecture",
+      "name": "includes",
+      "meaning": "Explicit knowledge may include reference architectures."
+    },
+    {
+      "from": "ExplicitArchitecturalKnowledge",
+      "to": "ArchitecturalTactic",
+      "name": "includes",
+      "meaning": "Explicit knowledge may include architectural tactics."
+    },
+    {
+      "from": "ExplicitArchitecturalKnowledge",
+      "to": "ArchitecturalPattern",
+      "name": "includes",
+      "meaning": "Explicit knowledge may include architectural patterns."
+    },
+    {
+      "from": "ArchitecturalStyle",
+      "to": "ArchitecturalPattern",
+      "name": "may_be_realized_by",
+      "meaning": "A style may be represented or combined through patterns."
+    },
+    {
+      "from": "ReferenceArchitecture",
+      "to": "ArchitecturalPattern",
+      "name": "may_contain_or_inspire",
+      "meaning": "A reference architecture may contain or inspire patterns."
+    },
+    {
+      "from": "ArchitecturalPattern",
+      "to": "PatternTacticInteraction",
+      "name": "participates_in",
+      "meaning": "Pattern and tactic fit or change is recorded by PatternTacticInteraction."
+    },
+    {
+      "from": "ArchitecturalTactic",
+      "to": "PatternTacticInteraction",
+      "name": "participates_in",
+      "meaning": "Pattern and tactic fit or change is recorded by PatternTacticInteraction."
+    },
+    {
+      "from": "PatternTacticInteraction",
+      "to": "TacticInteraction",
+      "name": "contributes_to",
+      "meaning": "Pattern/tactic implications can inform the overall interaction analysis."
+    },
+    {
+      "from": "ArchitecturalTactic",
+      "to": "QualityScenario",
+      "name": "targets_or_affects",
+      "meaning": "Tactics target quality attributes and may affect scenarios positively or negatively."
+    },
+    {
+      "from": "ArchitecturalTactic",
+      "to": "TacticInteraction",
+      "name": "interacts_with",
+      "meaning": "Tactics may interact; effects are recorded in TacticInteraction."
+    },
+    {
+      "from": "TacticInteraction",
+      "to": "QualityScenario",
+      "name": "affects",
+      "meaning": "Interactions record affected scenarios and consequences."
+    },
+    {
+      "from": "ArchitecturalAlternative",
+      "to": "ArchitecturalPattern",
+      "name": "assembles",
+      "meaning": "An alternative assembles zero or more patterns."
+    },
+    {
+      "from": "ArchitecturalAlternative",
+      "to": "ArchitecturalTactic",
+      "name": "uses",
+      "meaning": "An alternative uses one or more tactics."
+    },
+    {
+      "from": "ArchitecturalAlternative",
+      "to": "ScenarioAssessment",
+      "name": "is_assessed_by",
+      "meaning": "Alternatives are assessed against quality scenarios."
+    },
+    {
+      "from": "ScenarioAssessment",
+      "to": "QualityScenario",
+      "name": "assesses_against",
+      "meaning": "An assessment references the scenario it evaluates."
+    },
+    {
+      "from": "ArchitecturalAlternative",
+      "to": "ArchitecturalRisk",
+      "name": "may_have",
+      "meaning": "Alternatives may have risks and trade-offs."
+    },
+    {
+      "from": "ArchitecturalAlternative",
+      "to": "TradeOff",
+      "name": "has_tradeoff",
+      "meaning": "Alternatives may involve trade-offs."
+    },
+    {
+      "from": "ArchitecturalDecision",
+      "to": "ArchitecturalAlternative",
+      "name": "selects_or_defers",
+      "meaning": "A decision selects an alternative or records that selection is provisional or undetermined."
+    },
+    {
+      "from": "ArchitecturalDecision",
+      "to": "DecisionRationale",
+      "name": "is_justified_by",
+      "meaning": "The rationale records justification, uncertainty, and supporting references."
+    },
+    {
+      "from": "ArchitecturalDecision",
+      "to": "TradeOff",
+      "name": "records",
+      "meaning": "A decision records the trade-offs it accepts."
+    },
+    {
+      "from": "ArchitectureDecisionRecord",
+      "to": "ArchitecturalDecision",
+      "name": "records",
+      "meaning": "The ADR persists a proposed or accepted architectural decision and its traceable rationale."
+    },
+    {
+      "from": "ArchitectureDecisionRecord",
+      "to": "ADRVersion",
+      "name": "has_versions",
+      "meaning": "Every revision is preserved as an immutable ADR version."
+    },
+    {
+      "from": "ADRVersion",
+      "to": "ADRContent",
+      "name": "contains",
+      "meaning": "A version contains a structured decision proposal."
+    },
+    {
+      "from": "ADRContent",
+      "to": "QualityScenario",
+      "name": "traces",
+      "meaning": "ADR content references the quality scenarios considered."
+    },
+    {
+      "from": "ADRContent",
+      "to": "ArchitecturalTactic",
+      "name": "records_selected_tactics",
+      "meaning": "ADR content records the selected tactics and their sources."
+    },
+    {
+      "from": "ADRContent",
+      "to": "ArchitecturalArgument",
+      "name": "preserves_arguments",
+      "meaning": "ADR content preserves the Toulmin arguments."
+    },
+    {
+      "from": "ADRContent",
+      "to": "ScenarioAssessment",
+      "name": "preserves_assessments",
+      "meaning": "ADR content preserves qualitative scenario assessments."
+    },
+    {
+      "from": "ADRContent",
+      "to": "ArchitecturalRisk",
+      "name": "records_risks",
+      "meaning": "ADR content records risks and sensitivity points."
+    },
+    {
+      "from": "ADRContent",
+      "to": "TradeOff",
+      "name": "records_tradeoffs",
+      "meaning": "ADR content records accepted trade-offs."
+    },
+    {
+      "from": "ArchitecturalArgument",
+      "to": "ArchitecturalAlternative",
+      "name": "supports_or_qualifies",
+      "meaning": "Arguments support or qualify alternatives and their design claims."
+    },
+    {
+      "from": "ExpertHeuristic",
+      "to": "TacitArchitecturalKnowledge",
+      "name": "is_a",
+      "meaning": "An expert heuristic is a form of tacit architectural knowledge."
+    },
+    {
+      "from": "ProjectExperience",
+      "to": "TacitArchitecturalKnowledge",
+      "name": "is_a",
+      "meaning": "Project experience is a form of tacit architectural knowledge."
+    },
+    {
+      "from": "ScenarioAssessment",
+      "to": "ArchitecturalAlternative",
+      "name": "assesses_alternative",
+      "meaning": "Each assessment refers to exactly one alternative and one scenario."
+    },
+    {
+      "from": "ArchitecturalAlternative",
+      "to": "SensitivityPoint",
+      "name": "has_candidate_or_supported_sensitivity",
+      "meaning": "An alternative may expose properties whose variation affects scenario responses."
+    },
+    {
+      "from": "ScenarioAssessment",
+      "to": "CriticalQuestionAssessment",
+      "name": "is_critically_reviewed_by",
+      "meaning": "Critical questions challenge the assessment and its causal justification."
+    },
+    {
+      "from": "ScenarioAssessment",
+      "to": "EvaluationIteration",
+      "name": "may_be_revised_in",
+      "meaning": "Assessment revisions retain traceable iteration history."
+    }
   ]
 }

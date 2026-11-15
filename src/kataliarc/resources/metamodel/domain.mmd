@@ -44,15 +44,19 @@ classDiagram
   }
   class QualityScenario {
     +string id
+    +string source
     +string stimulus
     +string environment
+    +string artifact
     +string response
-    +string response_measure
+    +object response_measure
     +priority importance
     +priority difficulty
     +string acceptance_criteria
     +string[] known_context
     +string[] missing_information
+    +string[] constraints
+    +string business_relevance
     +boolean mandatory
     +string provenance
     +evidence_status evidence_status
@@ -156,10 +160,46 @@ classDiagram
   class ScenarioAssessment {
     +string alternative_id
     +string scenario_id
+    +string[] tactic_ids
+    +string design_decision
     +assessment_direction direction
+    +contribution_direction contribution_direction
+    +contribution_sufficiency sufficiency
+    +contribution_label contribution_label
     +string rationale
+    +object causal_justification
+    +string[] assumptions
+    +object[] objections
+    +CriticalQuestionAssessment[] critical_question_assessments
+    +string rubric_version
     +evidence_status evidence_status
     +compliance_status compliance_status
+  }
+  class SensitivityPoint {
+    +string id
+    +string property
+    +string scenario_id
+    +object response_measure
+    +string causal_mechanism
+    +string variation_effect
+    +string status
+    +object[] evidence
+  }
+  class CriticalQuestionAssessment {
+    +string scheme
+    +string question
+    +string claim_ref
+    +string answer
+    +string result
+    +string[] evidence_refs
+    +string objection
+  }
+  class EvaluationIteration {
+    +integer iteration
+    +string action
+    +string observation
+    +string[] source_artifacts
+    +string outcome
   }
   class DecisionRationale {
     +string justification
@@ -263,6 +303,9 @@ classDiagram
   ArchitecturalAlternative --> ArchitecturalTactic : uses
   ArchitecturalAlternative --> ScenarioAssessment : assessed by
   ScenarioAssessment --> QualityScenario : assesses against
+  ScenarioAssessment --> CriticalQuestionAssessment : critically reviewed by
+  ArchitecturalAlternative --> SensitivityPoint : exposes
+  ScenarioAssessment --> EvaluationIteration : may be revised in
   ArchitecturalAlternative --> ArchitecturalRisk : may have
   ArchitecturalAlternative --> TradeOff : has trade-off
   ArchitecturalDecision --> ArchitecturalAlternative : selects or defers

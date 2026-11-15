@@ -14,6 +14,7 @@ from kataliarc.adr import (
 )
 from kataliarc.rag import RAGError
 from kataliarc.toulmin import _accepted_adr_hits, build_toulmin_input
+from kataliarc.evaluation import RUBRIC_VERSION
 
 
 def initialize(tmp_path, monkeypatch, *, rag=False):
@@ -42,8 +43,17 @@ def prepare_analysis(root: Path):
     tactics["alternatives"] = [{"id": "ALT-01", "description": "Replicated service"}, {"id": "ALT-02", "description": "Single service"}]
     (root / "tactics.json").write_text(json.dumps(tactics), encoding="utf-8")
     evaluation = json.loads((root / "evaluation.json").read_text())
-    evaluation["rubric_version"] = "NFR-GRL-qual-v1"
-    evaluation["assessments"] = [{"alternative_id": "ALT-01", "scenario_id": "QA-01", "direction": "favorable", "rationale": "Failover", "evidence_status": "documentada", "compliance_status": "provisional"}]
+    evaluation["rubric_version"] = RUBRIC_VERSION
+    def assessment(alternative_id):
+        return {
+            "alternative_id": alternative_id, "scenario_id": "QA-01", "tactic_ids": ["T-01"], "design_decision": "Replicate service",
+            "direction": "favorable", "rationale": "Health checks detect failure; recovery mechanism is still required.",
+            "contribution_direction": "POSITIVE", "sufficiency": "INSUFFICIENT", "contribution_label": "HELP (+)", "neutral_justified": False,
+            "evidence_status": "inferencia/hipótesis", "compliance_status": "PREDICTED_UNDER_ASSUMPTIONS",
+            "causal_justification": {"claim": "Failure detection can support recovery.", "mechanism": "Health check detects failed instances.", "evidence": [], "assumptions": ["Recovery controller is configured"], "applicability_conditions": ["Health endpoint is reliable"], "expected_effect": "Faster failure recognition", "sufficiency_rationale": "Detection alone does not restore service.", "counterarguments": ["No failover evidence"], "conclusion": "Positive but insufficient."},
+            "assumptions": ["Recovery controller is configured"], "objections": [], "critical_question_assessments": [], "rubric_version": RUBRIC_VERSION,
+        }
+    evaluation["assessments"] = [assessment("ALT-01"), assessment("ALT-02")]
     (root / "evaluation.json").write_text(json.dumps(evaluation), encoding="utf-8")
     decision = json.loads((root / "decision.json").read_text())
     decision.update({"selected_alternative_id": "ALT-01", "status": "provisional", "rationale": "Best supported by current assessment.", "risks": ["Failover may lose in-flight work"], "tradeoffs": ["Higher operational complexity"]})

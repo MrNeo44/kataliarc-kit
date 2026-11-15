@@ -27,6 +27,7 @@ from .adr import (
     update_indexing,
     validate_record as validate_adr_record,
 )
+from .evaluation import RUBRIC_VERSION, validate_evaluation
 import hashlib
 
 ROOT = Path.cwd()
@@ -35,7 +36,7 @@ FILES: dict[str, Any] = {
     "context.json": {"business_goals": [], "business_requirements": [], "constraints": [], "quality_attributes": [], "quality_scenarios": [], "references": []},
     "utility-tree.json": {"quality_attributes": []},
     "tactics.json": {"scenario_arguments": [], "tactics": [], "pattern_tactic_interactions": [], "tactic_interactions": [], "alternatives": []},
-    "evaluation.json": {"assessments": [], "comparison": {"constraints": [], "dominance": [], "tradeoffs": [], "recommendation": None}},
+    "evaluation.json": {"rubric_version": RUBRIC_VERSION, "assessments": [], "comparison": {"constraints": [], "dominance": [], "tradeoffs": [], "recommendation": None}, "risks": [], "sensitivity_points": [], "tradeoffs": [], "iteration": 0, "iteration_requests": [], "iteration_history": [], "assessment_history": []},
     "review.json": {"objections": []},
     "decision.json": {"selected_alternative_id": None, "status": "indeterminado", "tradeoffs": [], "risks": [], "unresolved_questions": [], "rationale": ""},
 }
@@ -343,16 +344,10 @@ def validate() -> int:
             for key in ("claim", "grounds", "warrant", "backing", "qualifier", "rebuttal"):
                 if key not in arg:
                     errors.append(f"tactics.json: argumento de {sid} no contiene {key}")
-        for assessment in load_json(DATA / "evaluation.json").get("assessments", []):
-            for field in ("alternative_id", "scenario_id", "direction", "rationale", "evidence_status", "compliance_status"):
-                if field not in assessment:
-                    errors.append(f"evaluation.json: assessment sin campo {field}")
-            if assessment.get("scenario_id") not in valid:
-                errors.append(f"evaluation.json: escenario inexistente {assessment.get('scenario_id')}")
-            if assessment.get("direction") not in {"favorable", "condicionado", "desfavorable", "indeterminado"}:
-                errors.append(f"evaluation.json: dirección inválida en {assessment.get('scenario_id')}")
-            if assessment.get("compliance_status") not in {"verificado", "provisional", "incumplido", "desconocido"}:
-                errors.append(f"evaluation.json: compliance_status inválido en {assessment.get('scenario_id')}")
+        evaluation = load_json(DATA / "evaluation.json")
+        tactics = load_json(DATA / "tactics.json")
+        if evaluation.get("assessments") or tactics.get("alternatives"):
+            errors.extend(validate_evaluation(evaluation, context, tactics, utility))
     decisions_dir = DATA / "decisions"
     for path in decisions_dir.glob("ADR-*.json") if decisions_dir.is_dir() else []:
         try:
@@ -373,17 +368,17 @@ PROMPTS = {
     "elicit": "Lee context.md y completa context.json solo con información proporcionada. Marca incertidumbre y no inventes requisitos.",
     "prioritize": "Actualiza la prioridad en context.json solo cuando el cliente la haya confirmado. Organiza utility-tree.json como ramas por atributo con scenario_ids únicamente; si encuentras el formato antiguo con escenarios copiados, conviértelo preservando sus IDs y orden. No copies descripciones, restricciones ni prioridades. No asignes prioridad A/M/B si no está confirmada.",
     "design": "Desde todos los escenarios propone tácticas, argumentos Toulmin, interacciones y 2-3 alternativas ensambladas. Distingue hipótesis de evidencia.",
-    "evaluate": "Evalúa cada alternativa contra todos los escenarios. Separa dirección de contribución y compliance; no inventes magnitudes.",
-    "review": "Revisa argumentos y evaluación; actualiza review.json con review_summary, critical_questions, objections y decision_proposals si hay decisiones independientes. No aceptes ni indexes el ADR.",
-    "decide": "Integra revisión y recomienda decisión definitiva/provisional o indeterminada con trade-offs y pendientes.",
+    "evaluate": "Aplica los mecanismos Walton M1-M4. Lee .kataliarc/metamodel/walton-rubric.json; evalúa cada alternativa completa contra cada escenario del utility tree. Escribe evaluation.json y evaluation.md con assessments pareados y completos, etiquetas y cumplimiento separados, justificación causal, riesgos, puntos de sensibilidad y trade-offs trazables. Si hace falta trabajo de Toulmin, agrega iteration_requests con referencias válidas. No inventes métricas, evidencia ni cumplimiento.",
+    "review": "Aplica una segunda pasada de preguntas críticas Walton a cada evaluación y afirmación causal. Registra critical_question_assessments, objeciones y contraargumentos; corrige evaluaciones fundamentadamente conservando el historial. Completa review.json con decision_proposals si son independientes. No aceptes ni indexes el ADR.",
+    "decide": "Integra evaluación y revisión crítica; recomienda decisión definitiva, provisional o indeterminada con trade-offs, riesgos, condiciones y pendientes. No aceptes el ADR.",
 }
 PROMPTS_EN = {
     "elicit": "Read context.md and complete context.json only from provided information. Mark uncertainty; do not invent requirements.",
     "prioritize": "Update scenario priorities in context.json only when the client has confirmed them. Build utility-tree.json as quality-attribute branches containing scenario_ids only; if the legacy format with copied scenarios exists, convert it while preserving IDs and ordering. Do not copy descriptions, constraints, or priorities. Do not assign A/M/B unless confirmed.",
     "design": "From all scenarios, propose tactics, Toulmin arguments, interactions, and 2-3 assembled alternatives. Distinguish hypotheses from evidence.",
-    "evaluate": "Evaluate every alternative against all scenarios. Separate contribution from compliance; do not invent measurements.",
-    "review": "Critically review arguments and evaluation; update review.json with review_summary, critical_questions, objections, and decision_proposals when decisions are independent. Never accept or index the ADR.",
-    "decide": "Integrate the review and recommend a final, provisional, or indeterminate decision with trade-offs and open questions.",
+    "evaluate": "Act as Walton and apply mechanisms M1-M4. Read .kataliarc/metamodel/walton-rubric.json. Evaluate each complete alternative against every scenario referenced by the utility tree. Write evaluation.json and evaluation.md with complete alternative/scenario pairs, separately classified contribution and compliance, causal justification, traceable ATAM risks, sensitivity points, and trade-offs. If Toulmin work is needed, add iteration_requests with valid references. Never invent metrics, thresholds, evidence, or compliance.",
+    "review": "Act as Walton in a second critical-review pass. Apply explicit Walton question schemes from .kataliarc/metamodel/walton-rubric.json to claims and scenario assessments. Record critical_question_assessments with scheme, question, claim_ref, answer, result, evidence_refs, and objection. Correct a classification only when a premise/evidence issue justifies it; preserve the previous assessment in assessment_history and log the revision. Update review.json with summary, questions, objections, and independent decision_proposals. Never accept or index an ADR.",
+    "decide": "Act as Walton. Integrate the revised evaluation and critical review; recommend a final, provisional, or indeterminate outcome with rationale, trade-offs, risks, limitations, and open questions. Do not mark an ADR accepted.",
 }
 ROLE_ACTIONS = {
     "pohl": ("elicit", "prioritize"),
@@ -435,9 +430,91 @@ def run_stage(stage: str, with_agent: bool, *, repository: Path | None = None, r
             print(f"Repository analysis: {len(input_data['repository'].get('findings', []))} findings; RAG: {retrieval['status']}.")
             for warning in retrieval["warnings"]:
                 print(f"RAG warning: {warning}", file=sys.stderr)
-        result = AgentProvider().run(agent, prompt, ROOT)
+        provider = AgentProvider()
+        result = provider.run(agent, prompt, ROOT)
         if result.error:
             print(result.error, file=sys.stderr)
+        if result.returncode == 0 and stage in {"evaluate", "review", "decide"}:
+            try:
+                context = load_json(DATA / "context.json")
+                tactics = load_json(DATA / "tactics.json")
+                utility = load_json(DATA / "utility-tree.json")
+                evaluation = load_json(DATA / "evaluation.json")
+                if evaluation.get("assessments") or tactics.get("alternatives"):
+                    errors = validate_evaluation(evaluation, context, tactics, utility)
+                    if errors:
+                        print("Walton evaluation validation failed: " + "; ".join(errors), file=sys.stderr)
+                        return 1
+            except (OSError, ValueError, json.JSONDecodeError) as exc:
+                print(f"Could not validate Walton evaluation: {exc}", file=sys.stderr)
+                return 1
+        if result.returncode == 0 and stage == "evaluate":
+            try:
+                config = load_json(DATA / "config.json")
+            except ValueError:
+                config = {}
+            walton_config = config.get("walton", {}) if isinstance(config.get("walton", {}), dict) else {}
+            try:
+                max_iterations = max(0, min(5, int(walton_config.get("max_iterations", 3))))
+            except (TypeError, ValueError):
+                max_iterations = 3
+            for iteration in range(1, max_iterations + 1):
+                evaluation = load_json(DATA / "evaluation.json")
+                requests = [item for item in evaluation.get("iteration_requests", []) if isinstance(item, dict) and item.get("status", "PENDING") == "PENDING"]
+                if not requests:
+                    break
+                previous_assessments = evaluation.get("assessments", [])
+                refinement_prompt = (
+                    f"{prompts['design']}\n\nWalton requested a bounded refinement. Use ONLY these requests: "
+                    f"{json.dumps(requests, ensure_ascii=False, indent=2)}\n"
+                    "Revise candidate tactics, combinations or Toulmin arguments in tactics.json and alternatives.md. "
+                    "Do not edit evaluation.json, claim validation, inspect external repositories, or accept an ADR."
+                )
+                refined = provider.run(agent, refinement_prompt, ROOT)
+                if refined.returncode != 0:
+                    print(refined.error or "Toulmin refinement failed.", file=sys.stderr)
+                    for request in requests:
+                        request["status"] = "UNRESOLVED"
+                    evaluation["iteration_requests"] = requests
+                    evaluation.setdefault("iteration_history", []).append({"iteration": iteration, "action": "toulmin_refinement", "observation": refined.error or "Provider returned failure", "source_artifacts": ["evaluation.json"], "outcome": "UNRESOLVED", "previous_assessments": previous_assessments})
+                    evaluation["iteration"] = iteration
+                    (DATA / "evaluation.json").write_text(json.dumps(evaluation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                    return refined.returncode
+                for request in requests:
+                    request["status"] = "RESOLVED"
+                evaluation["iteration_requests"] = requests
+                evaluation.setdefault("iteration_history", []).append({"iteration": iteration, "action": "toulmin_refinement", "observation": "Toulmin revised requested artifacts; Walton reevaluation follows.", "source_artifacts": ["tactics.json", "alternatives.md"], "outcome": "REFINED", "previous_assessments": previous_assessments})
+                evaluation["iteration"] = iteration
+                evaluation.setdefault("assessment_history", []).append({"iteration": iteration - 1, "assessments": previous_assessments})
+                (DATA / "evaluation.json").write_text(json.dumps(evaluation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                prior_iteration_history = list(evaluation.get("iteration_history", []))
+                prior_assessment_history = list(evaluation.get("assessment_history", []))
+                reevaluate = provider.run(agent, prompts["evaluate"], ROOT)
+                if reevaluate.returncode != 0:
+                    print(reevaluate.error or "Walton reevaluation failed.", file=sys.stderr)
+                    return reevaluate.returncode
+                current = load_json(DATA / "evaluation.json")
+                current["iteration_history"] = prior_iteration_history + [entry for entry in current.get("iteration_history", []) if entry not in prior_iteration_history]
+                current["assessment_history"] = prior_assessment_history + [entry for entry in current.get("assessment_history", []) if entry not in prior_assessment_history]
+                current["iteration"] = iteration
+                (DATA / "evaluation.json").write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                errors = validate_evaluation(current, load_json(DATA / "context.json"), load_json(DATA / "tactics.json"), load_json(DATA / "utility-tree.json"))
+                if errors:
+                    print("Walton reevaluation validation failed: " + "; ".join(errors), file=sys.stderr)
+                    return 1
+            final_evaluation = load_json(DATA / "evaluation.json")
+            pending = [request for request in final_evaluation.get("iteration_requests", []) if isinstance(request, dict) and request.get("status", "PENDING") == "PENDING"]
+            if pending:
+                for request in pending:
+                    request["status"] = "UNRESOLVED"
+                final_evaluation.setdefault("iteration_history", []).append({"iteration": max_iterations, "action": "iteration_limit", "observation": "Walton refinement limit reached; remaining requests require manual follow-up.", "source_artifacts": ["evaluation.json"], "outcome": "UNRESOLVED"})
+                (DATA / "evaluation.json").write_text(json.dumps(final_evaluation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            if max_iterations == 0:
+                evaluation = load_json(DATA / "evaluation.json")
+                for request in evaluation.get("iteration_requests", []):
+                    if isinstance(request, dict) and request.get("status", "PENDING") == "PENDING":
+                        request["status"] = "UNRESOLVED"
+                (DATA / "evaluation.json").write_text(json.dumps(evaluation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         if result.returncode == 0 and stage == "review":
             try:
                 proposals = create_proposals(DATA)

@@ -71,7 +71,7 @@ def doctor(project: Path, *, as_json: bool = False) -> int:
         except (OSError, json.JSONDecodeError) as exc:
             add("ERROR", f"JSON {filename}: {exc}")
     source_root = data
-    for filename in ("context.schema.json", "utility-tree.schema.json", "tactics.schema.json", "evaluation.schema.json", "adr.schema.json"):
+    for filename in ("context.schema.json", "utility-tree.schema.json", "tactics.schema.json", "evaluation.schema.json", "walton-rubric.schema.json", "adr.schema.json"):
         try:
             schema = json.loads((source_root / "schemas" / filename).read_text(encoding="utf-8"))
             add("OK" if isinstance(schema, dict) else "ERROR", f"Schema {filename}: {'presente' if isinstance(schema, dict) else 'inválido'}")
@@ -83,6 +83,13 @@ def doctor(project: Path, *, as_json: bool = False) -> int:
         add("OK" if valid_domain else "ERROR", "Metamodelo de dominio presente" if valid_domain else "Metamodelo de dominio inválido")
     except (OSError, json.JSONDecodeError) as exc:
         add("ERROR", f"Metamodelo de dominio ausente o inválido: {exc}")
+    try:
+        from .evaluation import validate_rubric
+        rubric = json.loads((source_root / "metamodel" / "walton-rubric.json").read_text(encoding="utf-8"))
+        rubric_errors = validate_rubric(rubric)
+        add("ERROR" if rubric_errors else "OK", "Rúbrica Walton inválida: " + "; ".join(rubric_errors) if rubric_errors else "Rúbrica Walton y reglas deterministas alineadas")
+    except (OSError, json.JSONDecodeError) as exc:
+        add("ERROR", f"Rúbrica Walton ausente o inválida: {exc}")
     from .adr import validate_record
     decisions_dir = data / "decisions"
     for adr_file in decisions_dir.glob("ADR-*.json") if decisions_dir.is_dir() else []:
