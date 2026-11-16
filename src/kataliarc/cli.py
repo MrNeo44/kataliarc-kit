@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 
 from .adapters import ADAPTERS, get_adapter
 from .providers import AgentProvider
-from .wizard import AGENTS, render_banner, select_agent, select_language, select_choice, select_choices
+from .wizard import AGENTS, clear_terminal, play_retro_music, render_banner, select_agent, select_language, select_choice
 from .management import MANIFEST, doctor as run_doctor, update as run_update
 from .toulmin import build_design_prompt, build_toulmin_input, write_managed_json
 from .rag import OpenAIVectorStoreRetriever, RAGError, configured_value, load_rag_settings
@@ -74,11 +74,16 @@ def write_json(path: Path, data: Any) -> bool:
     return write_new(path, json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 
 
-def init(agent: str, project: Path | None = None, *, overwrite: bool = False, interactive: bool = False, no_banner: bool = False, confirm: bool = True, language: str | None = None, global_scope: bool = False, rag_vector_store_id: str | None = None) -> int:
+def init(agent: str, project: Path | None = None, *, overwrite: bool = False, interactive: bool = False, no_banner: bool = False, no_music: bool = False, confirm: bool = True, language: str | None = None, global_scope: bool = False, rag_vector_store_id: str | None = None) -> int:
     global ROOT, DATA
     ROOT = (project or Path.cwd()).resolve()
     DATA = ROOT / ".kataliarc"
-    render_banner(enabled=not no_banner and (interactive or getattr(sys.stdout, "isatty", lambda: False)()))
+    show_banner = not no_banner and (interactive or getattr(sys.stdout, "isatty", lambda: False)())
+    if show_banner:
+        clear_terminal()
+    render_banner(enabled=show_banner)
+    if not no_music and getattr(sys.stdout, "isatty", lambda: False)():
+        play_retro_music()
     was_initialized = DATA.exists()
     if language is None:
         try:
@@ -113,21 +118,8 @@ def init(agent: str, project: Path | None = None, *, overwrite: bool = False, in
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
             return 2
-        source_options = [
-            ("local_adrs", "Local ADR documents"),
-            ("scientific_papers", "Scientific papers"),
-            ("architectural_catalog", "Architectural knowledge catalog"),
-        ]
-        selected_sources = select_choices("Configure architectural knowledge sources?", source_options)
-        knowledge = []
-        for source_type in selected_sources:
-            label = dict(source_options)[source_type]
-            directory_text = input(f"Directory for {label} (blank to skip): ").strip()
-            if directory_text:
-                directory = Path(directory_text).expanduser().resolve()
-                knowledge.append({"type": source_type, "path": str(directory), "evidence_status": "unverified"})
         print("\nKatalIArc Installation\n")
-        print(f"Agent          : {selected}\nLocation       : {'Global user installation' if global_scope else ROOT}\nLanguage       : {'Spanish' if language == 'es' else 'English'}\nKnowledge      : {len(knowledge) if knowledge else 'Not configured'}\nSkills         : Pohl, Toulmin, Walton")
+        print(f"Agent          : {selected}\nLocation       : {'Global user installation' if global_scope else ROOT}\nLanguage       : {'Spanish' if language == 'es' else 'English'}\nSkills         : Pohl, Toulmin, Walton")
         proceed = select_choice("Proceed with installation?", [("yes", "Yes"), ("no", "No")], default=0) if confirm else "yes"
         if proceed != "yes":
             print("Inicialización cancelada.")
@@ -139,7 +131,7 @@ def init(agent: str, project: Path | None = None, *, overwrite: bool = False, in
         print(f"La ruta del proyecto no es un directorio: {ROOT}", file=sys.stderr)
         return 2
     show_progress = interactive and getattr(sys.stdout, "isatty", lambda: False)()
-    progress_labels = ["Metamodelo", "Flujo de trabajo", "Agentes", "Conocimiento explícito"]
+    progress_labels = ["Metamodelo", "Flujo de trabajo", "Agentes", "Rúbrica y schemas"]
 
     def progress(step: int) -> None:
         if not show_progress:
@@ -159,7 +151,6 @@ def init(agent: str, project: Path | None = None, *, overwrite: bool = False, in
     adapter = get_adapter(agent)
     if global_scope:
         adapter.configure_global()
-    knowledge = locals().get("knowledge", [])
     created = []
     try:
         for name, data in FILES.items():
@@ -189,7 +180,7 @@ def init(agent: str, project: Path | None = None, *, overwrite: bool = False, in
             except (OSError, json.JSONDecodeError):
                 if not overwrite:
                     raise ValueError(f"Configuración existente inválida: {config}; usa --update para reemplazarla")
-        current = {**previous, "agent": agent, "language": language or "es", "version": "0.2.0", "scope": "user" if global_scope else "project", "project_id": previous.get("project_id") or str(uuid.uuid4()), "knowledge_sources": knowledge or previous.get("knowledge_sources", [])}
+        current = {**previous, "agent": agent, "language": language or "es", "version": "0.2.0", "scope": "user" if global_scope else "project", "project_id": previous.get("project_id") or str(uuid.uuid4())}
         if rag_vector_store_id:
             prior_rag = previous.get("rag", {}) if isinstance(previous.get("rag", {}), dict) else {}
             current["rag"] = {**prior_rag, "enabled": True, "vector_store_id": rag_vector_store_id}
@@ -766,7 +757,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-banner", action="store_true", help="No mostrar el banner")
     p.add_argument("--update", action="store_true", help="Actualizar archivos de integración de KatalIArc existentes")
     p.add_argument("--language", choices=["es", "en"], help="Idioma de los artefactos iniciales")
-    p.add_argument("--knowledge-dir", action="append", default=[], help="Ruta de conocimiento local (puede repetirse)")
+    p.add_argument("--no-music", action="store_true", help="Silencia la melodía retro durante el inicio")
     p.add_argument("--rag-vector-store-id", help="ID of an existing OpenAI vector store for Toulmin retrieval")
     p.add_argument("--global", action="store_true", dest="global_scope", help="Instala skills e instrucciones en el directorio de usuario")
     subs.add_parser("validate", help="Valida JSON y trazabilidad entre artefactos")
@@ -815,12 +806,7 @@ def main() -> None:
         interactive = args.agent is None and sys.stdin.isatty() and sys.stdout.isatty()
         if args.agent is None and not interactive:
             build_parser().error("en una terminal no interactiva indica --agent; usa --directory y --language si corresponde")
-        result = init(args.agent or "codex", Path.home() if args.global_scope else args.directory, overwrite=args.update, interactive=interactive, no_banner=args.no_banner, confirm=interactive, language=args.language, global_scope=args.global_scope, rag_vector_store_id=args.rag_vector_store_id)
-        if result == 0 and args.knowledge_dir:
-            config_path = (Path.home() if args.global_scope else args.directory or Path.cwd()).resolve() / ".kataliarc/config.json"
-            config = load_json(config_path)
-            config["knowledge_sources"] = [{"type": "local", "path": str(Path(value).expanduser().resolve()), "evidence_status": "unverified"} for value in args.knowledge_dir]
-            config_path.write_text(json.dumps(config, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        result = init(args.agent or "codex", Path.home() if args.global_scope else args.directory, overwrite=args.update, interactive=interactive, no_banner=args.no_banner, no_music=args.no_music, confirm=interactive, language=args.language, global_scope=args.global_scope, rag_vector_store_id=args.rag_vector_store_id)
     else:
         if args.command == "validate":
             result = validate()

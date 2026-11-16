@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "KatalIArc Walton qualitative evaluation rubric",
+  "type": "object",
+  "required": ["id", "version", "scope", "dimensions", "contribution_rules", "compliance_statuses", "rules", "critical_question_schemes"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "scope": {"const": "alternative-quality-scenario-pair"},
+    "dimensions": {"type": "array", "minItems": 8, "items": {"type": "object", "required": ["id", "name", "question"], "properties": {"id": {"type": "string"}, "name": {"type": "string"}, "question": {"type": "string"}}}},
+    "contribution_rules": {"type": "array", "minItems": 8, "items": {"type": "object", "required": ["direction", "sufficiency", "label"], "properties": {"direction": {"enum": ["POSITIVE", "NEGATIVE", "NEUTRAL", "UNKNOWN"]}, "sufficiency": {"enum": ["SUFFICIENT", "INSUFFICIENT", "UNKNOWN"]}, "label": {"enum": ["MAKE (++)", "HELP (+)", "SomePositive", "HURT (-)", "BREAK (--)", "SomeNegative", "UNKNOWN (?)", "NEUTRAL (0)"]}, "requires_neutral_justification": {"type": "boolean"}}}},
+    "compliance_statuses": {"type": "array", "items": {"enum": ["VERIFIED_SATISFIED", "VERIFIED_UNSATISFIED", "PREDICTED_UNDER_ASSUMPTIONS", "UNVERIFIED"]}},
+    "rules": {"type": "array", "items": {"type": "string"}},
+    "critical_question_schemes": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}}
+  }
+}

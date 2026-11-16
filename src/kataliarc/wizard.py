@@ -1,7 +1,11 @@
 """Interactive installation experience for KatalIArc."""
 import os
 import shutil
+import struct
+import subprocess
 import sys
+import tempfile
+import wave
 from prompt_toolkit.application import Application
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.key_binding import KeyBindings
@@ -24,7 +28,18 @@ BANNER = """██╗  ██╗ █████╗ ████████╗ 
 ██║  ██╗██║  ██║   ██║   ██║  ██║███████╗██║██║  ██║██║  ██║╚██████╗
 ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝
 
-                         desarrollado por MrNeo44 (Diego Gatica)"""
+                         Desarrollado por MODALS4SW@UV
+                         Copyright © 2026"""
+
+
+def clear_terminal(stream=None) -> bool:
+    """Clear a real interactive terminal before showing the init banner."""
+    stream = stream or sys.stdout
+    if not getattr(stream, "isatty", lambda: False)() or os.environ.get("TERM") == "dumb":
+        return False
+    stream.write("\033[2J\033[H")
+    stream.flush()
+    return True
 
 
 def render_banner(stream=None, *, enabled: bool = True) -> None:
@@ -38,25 +53,74 @@ def render_banner(stream=None, *, enabled: bool = True) -> None:
         stream.write("KATALIARC\n\n")
 
 
-def _select(options, question, *, default=0, multiple=False, input_stream=None, output_stream=None):
+def play_retro_music() -> bool:
+    """Play a short generated 8-bit tune when a native local player is available."""
+    winsound = None
+    if sys.platform == "win32":
+        try:
+            import winsound as native_winsound
+            winsound = native_winsound
+        except ImportError:
+            return False
+        player = None
+    else:
+        player = shutil.which("afplay") if sys.platform == "darwin" else (shutil.which("paplay") or shutil.which("aplay"))
+    if sys.platform != "win32" and not player:
+        return False
+    sample_rate = 22050
+    notes = ((523, .12), (659, .12), (784, .12), (1047, .22), (784, .12), (1047, .28), (0, .05), (784, .12), (659, .12), (523, .24))
+    samples = bytearray()
+    for frequency, duration in notes:
+        count = int(sample_rate * duration)
+        for index in range(count):
+            if frequency == 0:
+                value = 0
+            else:
+                envelope = min(1.0, index / 100, (count - index) / 180)
+                phase = (index * frequency / sample_rate) % 1.0
+                value = int(600 * envelope * (1 if phase < .5 else -1))
+            samples.extend(struct.pack("<h", value))
+    path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as output:
+            path = output.name
+        with wave.open(path, "wb") as audio:
+            audio.setnchannels(1)
+            audio.setsampwidth(2)
+            audio.setframerate(sample_rate)
+            audio.writeframes(samples)
+        if winsound:
+            winsound.PlaySound(path, winsound.SND_FILENAME)
+            return True
+        result = subprocess.run([player, path], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8)
+        return result.returncode == 0
+    except (OSError, subprocess.TimeoutExpired, wave.Error):
+        return False
+    finally:
+        if path:
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
+
+
+def _select(options, question, *, default=0, input_stream=None, output_stream=None):
     """Compact inline choice control shared by the installation wizard."""
     input_stream = input_stream or sys.stdin
     output_stream = output_stream or sys.stdout
     selected = max(0, min(default, len(options) - 1))
-    checked = set()
-
     def numbered():
         output_stream.write(question + "\n")
         for i, (_, label) in enumerate(options, 1):
             output_stream.write(f"  {i}. {label}\n")
         choice = input_stream.readline().strip()
         if not choice:
-            return [options[i][0] for i in sorted(checked)] if multiple else options[selected][0]
+            return options[selected][0]
         try:
-            indices = [int(part.strip()) - 1 for part in choice.split(",")]
-            if any(i < 0 or i >= len(options) for i in indices):
+            index = int(choice) - 1
+            if index < 0 or index >= len(options):
                 raise ValueError
-            return [options[i][0] for i in indices] if multiple else options[indices[0]][0]
+            return options[index][0]
         except ValueError as exc:
             raise ValueError("Selección inválida") from exc
 
@@ -74,11 +138,11 @@ def _select(options, question, *, default=0, multiple=False, input_stream=None, 
     def render() -> FormattedText:
         lines = [("class:question", question + "\n")]
         for index, (_, label) in enumerate(options):
-            mark = index in checked if multiple else index == selected
+            mark = index == selected
             marker = ("●" if mark else "○") if unicode_markers else ("[x]" if mark else "[ ]")
             style = "class:selected" if index == selected else "class:option"
             lines.append((style, f"  {marker} {label}\n"))
-        hint = ("Use ↑ ↓ to move, Space to toggle, Enter to continue." if multiple else "Use ↑ ↓ to navigate and Enter to select.") if unicode_markers else ("Use arrows, Space, and Enter." if multiple else "Use arrows and Enter to select.")
+        hint = "Use ↑ ↓ to navigate and Enter to select." if unicode_markers else "Use arrows and Enter to select."
         lines.append(("class:hint", hint))
         return FormattedText(lines)
 
@@ -92,17 +156,9 @@ def _select(options, question, *, default=0, multiple=False, input_stream=None, 
         nonlocal selected
         selected = (selected + 1) % len(options)
 
-    @bindings.add("space")
-    def toggle(event) -> None:
-        if multiple:
-            if selected in checked:
-                checked.remove(selected)
-            else:
-                checked.add(selected)
-
     @bindings.add("enter")
     def choose(event) -> None:
-        event.app.exit(result=[options[i][0] for i in sorted(checked)] if multiple else options[selected][0])
+        event.app.exit(result=options[selected][0])
 
     @bindings.add("c-c")
     def cancel(event) -> None:
@@ -130,10 +186,6 @@ def _select(options, question, *, default=0, multiple=False, input_stream=None, 
 
 def select_choice(question, options, *, default=0, input_stream=None, output_stream=None):
     return _select(options, question, default=default, input_stream=input_stream, output_stream=output_stream)
-
-
-def select_choices(question, options, *, input_stream=None, output_stream=None):
-    return _select(options, question, multiple=True, input_stream=input_stream, output_stream=output_stream)
 
 
 def select_agent(input_stream=None, output_stream=None) -> str:

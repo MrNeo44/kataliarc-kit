@@ -1,0 +1,72 @@
+{
+  "id": "kataliarc-quality-contribution-v1",
+  "version": "1.0.0",
+  "scope": "alternative-quality-scenario-pair",
+  "dimensions": [
+    {"id": "D1", "name": "applicability", "question": "Can the tactic be used under the problem conditions and constraints?"},
+    {"id": "D2", "name": "causal_mechanism", "question": "How does the design decision modify the scenario response?"},
+    {"id": "D3", "name": "direction", "question": "Is the effect positive, negative, neutral, or unknown?"},
+    {"id": "D4", "name": "sufficiency", "question": "Is the contribution sufficient to meet or prevent the scenario objective?"},
+    {"id": "D5", "name": "interactions", "question": "Do tactics complement, depend on, or interfere with each other in this alternative?"},
+    {"id": "D6", "name": "evidence", "question": "What evidence or explicit lack of evidence supports the conclusion?"},
+    {"id": "D7", "name": "refutation", "question": "What relevant objections or counterarguments remain?"},
+    {"id": "D8", "name": "coverage", "question": "Were all in-scope scenarios assessed for this alternative?"}
+  ],
+  "contribution_rules": [
+    {"direction": "POSITIVE", "sufficiency": "SUFFICIENT", "label": "MAKE (++)"},
+    {"direction": "POSITIVE", "sufficiency": "INSUFFICIENT", "label": "HELP (+)"},
+    {"direction": "POSITIVE", "sufficiency": "UNKNOWN", "label": "SomePositive"},
+    {"direction": "NEGATIVE", "sufficiency": "INSUFFICIENT", "label": "HURT (-)"},
+    {"direction": "NEGATIVE", "sufficiency": "SUFFICIENT", "label": "BREAK (--)"},
+    {"direction": "NEGATIVE", "sufficiency": "UNKNOWN", "label": "SomeNegative"},
+    {"direction": "UNKNOWN", "sufficiency": "SUFFICIENT", "label": "UNKNOWN (?)"},
+    {"direction": "UNKNOWN", "sufficiency": "INSUFFICIENT", "label": "UNKNOWN (?)"},
+    {"direction": "UNKNOWN", "sufficiency": "UNKNOWN", "label": "UNKNOWN (?)"},
+    {"direction": "NEUTRAL", "sufficiency": "UNKNOWN", "label": "NEUTRAL (0)", "requires_neutral_justification": true}
+  ],
+  "compliance_statuses": ["VERIFIED_SATISFIED", "VERIFIED_UNSATISFIED", "PREDICTED_UNDER_ASSUMPTIONS", "UNVERIFIED"],
+  "rules": [
+    "Do not assign MAKE without an explicit sufficiency rationale.",
+    "For known positive direction with unknown sufficiency, use SomePositive, not HELP.",
+    "Do not assign BREAK from a hypothetical risk alone.",
+    "For known negative direction with unknown sufficiency, use SomeNegative, not HURT.",
+    "Absence of evidence is not neutral evidence.",
+    "A qualitative label never proves empirical compliance with a response measure.",
+    "Assess every in-scope quality scenario for every alternative.",
+    "Reassess each combined-tactic alternative as a whole; do not sum tactic labels.",
+    "Record constraints, uncertainty, and objections explicitly.",
+    "Every classification requires a traceable causal argument."
+  ],
+  "critical_question_schemes": {
+    "practical_reasoning": [
+      "Does this design decision help achieve the stated goal?",
+      "Is it applicable under the recorded constraints?",
+      "Is another mechanism required?",
+      "Are relevant alternatives available?",
+      "Does the decision introduce material negative consequences?"
+    ],
+    "causal_argument": [
+      "Is the mechanism-to-effect relation justified?",
+      "What conditions could prevent the expected result?",
+      "Is an effect being assumed without evidence?",
+      "Is the claimed contribution actually sufficient?"
+    ],
+    "analogy": [
+      "Is the historical ADR context comparable?",
+      "Do differences affect the precedent's applicability?",
+      "Was the outcome attributed to the prior decision observed?",
+      "Is there counterevidence?"
+    ],
+    "expert_opinion": [
+      "Does the source support the claim?",
+      "Is the source relevant to this context?",
+      "Are there contradictory findings?"
+    ],
+    "consequences": [
+      "Were effects on all in-scope scenarios considered?",
+      "Are risks or trade-offs omitted?",
+      "Does an effect conflict with a mandatory constraint?",
+      "Does the alternative require revision?"
+    ]
+  }
+}

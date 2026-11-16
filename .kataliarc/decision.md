@@ -1,0 +1,3 @@
+# Decisión
+
+Estado inicial: indeterminado.

@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "files": {
+    "AGENTS.md": "4b5addbfc34c4f686021640d2fa96a81ffe067ed9d53dfce01e8540b92025e7d",
+    ".agents/skills/kataliarc-pohl/SKILL.md": "183bd0e3787f0be6b4d6c8cb017bb22cf14b588b738a03a0733a249fd30a67a3",
+    ".agents/skills/kataliarc-toulmin/SKILL.md": "56b5fdb299ca020a561abaf401b8c8f43908dc428709116ee220346031eaa160",
+    ".agents/skills/kataliarc-walton/SKILL.md": "6519b567ab2c4610c6c3d8622bd152da503333d0f4ab868dec46387f11e5b6c0",
+    ".kataliarc/schemas/walton-rubric.schema.json": "018b8171323041d19e4833392410ab0fe3b8e6ae9375217e18826e8195eddfcf",
+    ".kataliarc/schemas/utility-tree.schema.json": "5d1e8d007dcdfe83872b49f21c2b5f0c33b5a29ef116b9df76253ccad6560fb0",
+    ".kataliarc/schemas/tactics.schema.json": "8477c8a35f255f31b79b57df85b404257e362e625d2ac8d6e1d2688fd85d0fed",
+    ".kataliarc/schemas/adr.schema.json": "46734201935e91eff84758ad57ce44b13553d0bea2b9499c846eb070a2a06de2",
+    ".kataliarc/schemas/context.schema.json": "8b708b89a74573053b33c02c573f54efbaa6f2fe3640e53f63d396d227d5050a",
+    ".kataliarc/schemas/evaluation.schema.json": "090d48255f6a3414ddf9eafe6260d86f94c956e1666c0b59105508fa3d2628ee",
+    ".kataliarc/metamodel/domain.json": "68ad156562ce7825c35cc7089bf05c002f49abb6da312c9c591ea070170bcd44",
+    ".kataliarc/metamodel/process.md": "643c311c14500913dc886bb230cff5e123f707a45622c30063e8d61db6775cf0",
+    ".kataliarc/metamodel/domain.mmd": "2ed8d5e44c32d8e3be77e84974ef53585f2419a8996c361901d8bd127399356c",
+    ".kataliarc/metamodel/process.mmd": "fce000802725896af03dea3cc2b0c1cdb6dbe2017e0bacd5128ea78c36a38d23",
+    ".kataliarc/metamodel/walton-rubric.json": "135486c37623a053ca8542a10cedd303ec8f258e0ca741364e6d843f57c68b28"
+  }
+}

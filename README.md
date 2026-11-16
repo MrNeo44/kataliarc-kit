@@ -4,22 +4,18 @@ A cross-platform CLI for traceable software architecture decisions using quality
 
 ## Installation
 
-Python 3.11 or later:
-
-```sh
-python3 -m pip install kataliarc-kit
-```
-
-For development from this repository:
+Python 3.11 or later. From the repository checkout:
 
 ```sh
 python3 -m pip install -e .
 kataliarc --help
 ```
 
+If `pip install kataliarc-kit` returns `No matching distribution found`, use the repository checkout until a PyPI release is available.
+
 ## Initialization
 
-In an interactive terminal, `kataliarc init` guides you through five steps: agent, location, language, optional knowledge sources, and confirmation. Knowledge source paths are recorded as unverified; they are not indexed or treated as validated evidence.
+In an interactive terminal, `kataliarc init` guides you through four steps: agent, location, language, and confirmation. It plays a very soft retro 8-bit tune by default; pass `--no-music` to mute it. The screen clearing and music affect only the local terminal and machine.
 
 ```text
 Select your AI coding agent:
@@ -38,7 +34,7 @@ Detection only reports availability. Files can still be generated when the provi
 kataliarc init --agent codex --directory . --language en
 kataliarc init --agent claude --directory ../service --language en
 kataliarc init --agent gemini --global --language en
-kataliarc init --agent copilot --knowledge-dir ./docs/adr
+kataliarc init --agent copilot --no-music
 ```
 
 Generated artifacts and requested responses support English (`en`) and Spanish (`es`); Spanish is the default. JSON field names and contracts do not change between languages. Use `--no-banner` to suppress the banner.
@@ -153,7 +149,7 @@ kataliarc toulmin design --repo ../service --no-rag
 
 Historical ADRs provide context, not proof that a past decision fits the current repository. The prepared input preserves source IDs and marks transfer to the current design as an inference/hypothesis. Retrieved content is treated as untrusted data. The provider is instructed to include all six Toulmin elements, including backing, and to leave final evaluation and decision to later phases.
 
-`doctor` checks the provider, resources, JSON files, schemas, metamodel, knowledge paths, and permissions without writing files. `--json` produces JSON output without a banner or ANSI formatting. `update` only updates local resources listed in `.kataliarc/managed-files.json`; it reports conflicts, preserves conflicting files, and creates a `.kataliarc-backup` copy when updating a previously intact resource. `--dry-run` makes no changes; `--yes` enables non-interactive updates. KatalIArc does not download files from GitHub.
+`doctor` checks the provider, resources, JSON files, schemas, metamodel, and permissions without writing files. It also reports any knowledge paths present in older configurations. `--json` produces output without a banner or ANSI formatting. `update` only updates local resources listed in `.kataliarc/managed-files.json`; it reports conflicts, preserves conflicting files, and creates a `.kataliarc-backup` copy when updating a previously intact resource. `--dry-run` makes no changes; `--yes` enables non-interactive updates. KatalIArc does not download files from GitHub.
 
 Architecture workflow artifacts are written to `.kataliarc/` for review. The client representative must confirm priorities. Hypotheses are not treated as evidence, and contribution is recorded separately from compliance.
 
@@ -164,7 +160,6 @@ Architecture workflow artifacts are written to `.kataliarc/` for review. The cli
 - **`--agent` is required in a non-interactive terminal:** use `kataliarc init --agent codex` (or `claude`, `gemini`, or `copilot`).
 - **The provider is not on `PATH`:** skills can still be installed; install and authenticate the provider CLI separately before running a methodological role/action command.
 - **Update conflicts:** run `doctor` to inspect the state, review files marked `CONFLICT`, and run `update` again when you want to adopt available changes.
-- **Knowledge source paths do not exist:** correct the paths in `.kataliarc/config.json`; KatalIArc only records them.
 
 ## Development and tests
 

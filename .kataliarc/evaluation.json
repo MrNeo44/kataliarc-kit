@@ -1,0 +1,17 @@
+{
+  "rubric_version": "kataliarc-quality-contribution-v1",
+  "assessments": [],
+  "comparison": {
+    "constraints": [],
+    "dominance": [],
+    "tradeoffs": [],
+    "recommendation": null
+  },
+  "risks": [],
+  "sensitivity_points": [],
+  "tradeoffs": [],
+  "iteration": 0,
+  "iteration_requests": [],
+  "iteration_history": [],
+  "assessment_history": []
+}
