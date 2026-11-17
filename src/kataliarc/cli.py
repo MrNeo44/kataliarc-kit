@@ -745,8 +745,39 @@ def decide_action(*, show: str | None = None, accept: str | None = None, reject:
         return 2
 
 
+def build_public_help_parser() -> argparse.ArgumentParser:
+    """Build the concise, user-facing help view with standard argparse formatting."""
+    parser = argparse.ArgumentParser(
+        prog="kataliarc help",
+        description="Flujo local de apoyo a decisiones de arquitectura",
+    )
+    commands = parser.add_subparsers(dest="command")
+    help_rows = (
+        ("init", "Inicializa artefactos y skills del proyecto"),
+        ("help", "Muestra los comandos disponibles"),
+        ("pohl elicit", "Recoge contexto y escenarios"),
+        ("pohl prioritize", "Organiza prioridades confirmadas"),
+        ("toulmin design", "Propone tácticas y alternativas"),
+        ("walton evaluate", "Evalúa escenarios, alternativas y trade-offs"),
+        ("walton review", "Revisa críticamente los argumentos"),
+        ("walton decide", "Integra hallazgos y recomienda un resultado"),
+    )
+    for command, description in help_rows:
+        commands.add_parser(command, help=description)
+    return parser
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="kataliarc", description="Flujo local de apoyo a decisiones de arquitectura")
+    class KatalIArcParser(argparse.ArgumentParser):
+        def format_help(self) -> str:
+            if self.prog == "kataliarc":
+                return build_public_help_parser().format_help()
+            return super().format_help()
+
+    parser = KatalIArcParser(
+        prog="kataliarc",
+        description="Flujo local de apoyo a decisiones de arquitectura",
+    )
     parser.add_argument("--index-adr-worker", metavar="ADR_ID", help=argparse.SUPPRESS)
     parser.add_argument("--supersede-adr-worker", metavar="ADR_ID", help=argparse.SUPPRESS)
     parser.add_argument("--init", "-init", dest="command", action="store_const", const="init", help="Inicia el asistente de configuración")
@@ -784,18 +815,31 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--note", default="", help="Approval/rejection/revision note")
     p.add_argument("--supersedes", help="Accepted ADR ID replaced by the newly accepted ADR")
     for role, actions in ROLE_ACTIONS.items():
-        role_parser = subs.add_parser(role, help=f"Ejecuta una acción metodológica de {role} con el proveedor configurado")
+        action_summary = "; ".join(f"kataliarc {role} {action}" for action in actions)
+        role_parser = subs.add_parser(role, help=f"Acciones: {action_summary}")
         role_actions = role_parser.add_subparsers(dest="role_action", required=True)
         for action in actions:
             action_parser = role_actions.add_parser(action, help=f"Invoca {role} para la fase {action}")
             if action == "design":
                 action_parser.add_argument("--repo", type=Path, help="Target repository for read-only analysis (default: current directory)")
                 action_parser.add_argument("--no-rag", action="store_true", help="Run Toulmin without searching the vector store")
+    help_parser = subs.add_parser("help", help="Muestra los comandos disponibles")
+    help_parser.add_argument("topic", nargs="?", help="Comando del que se quiere ver la ayuda detallada")
     return parser
 
 
 def main() -> None:
-    args = build_parser().parse_args()
+    parser = build_parser()
+    args = parser.parse_args()
+    if args.command == "help":
+        if args.topic:
+            subparsers = next(action for action in parser._actions if isinstance(action, argparse._SubParsersAction))
+            if args.topic not in subparsers.choices:
+                parser.error(f"comando desconocido para help: {args.topic}")
+            subparsers.choices[args.topic].print_help()
+        else:
+            parser.print_help()
+        return
     if args.index_adr_worker:
         if args.supersede_adr_worker:
             _supersede_remote(args.supersede_adr_worker)

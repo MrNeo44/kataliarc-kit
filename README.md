@@ -4,14 +4,18 @@ A cross-platform CLI for traceable software architecture decisions using quality
 
 ## Installation
 
-Python 3.11 or later. From the repository checkout:
+Python 3.11 or later. Install KatalIArc once for your user from GitHub with [uv](https://docs.astral.sh/uv/getting-started/installation/):
 
 ```sh
-python3 -m pip install -e .
-kataliarc --help
+uv tool install kataliarc-kit --from git+https://github.com/MrNeo44/kataliarc-kit.git
+uv tool update-shell
 ```
 
-If `pip install kataliarc-kit` returns `No matching distribution found`, use the repository checkout until a PyPI release is available.
+Open a new terminal after `uv tool update-shell`. The `kataliarc` command will then be available from any project directory. uv manages the CLI in a user-level isolated environment, separate from each project's Python environment.
+
+Initialize the repository where you want to use KatalIArc by changing into it and running `kataliarc init`. Project integrations and architecture artifacts are created in that repository.
+
+For development from a local checkout, use a project virtual environment and install with `python -m pip install -e .`.
 
 ## Initialization
 
@@ -46,6 +50,8 @@ KatalIArc installs three skills—Pohl, Toulmin, and Walton—in each provider's
 ## Commands
 
 ```sh
+kataliarc help
+kataliarc help pohl
 kataliarc pohl elicit
 kataliarc pohl prioritize
 kataliarc toulmin design
@@ -69,6 +75,7 @@ kataliarc update --global --dry-run
 
 | Command | What it does | Methodological skill |
 | --- | --- | --- |
+| `help` | Lists general commands and methodological role/actions | None; local help |
 | `init` | Sets up the project and installs the skills | None; configures the selected provider |
 | `pohl elicit` | Collects context and quality scenarios | Pohl |
 | `pohl prioritize` | Organizes the utility tree and priorities | Pohl, with client confirmation |
