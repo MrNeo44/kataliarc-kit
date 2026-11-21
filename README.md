@@ -97,11 +97,23 @@ Generated artifacts and requested responses support English (`en`) and Spanish (
 
 ## Integrations
 
-KatalIArc installs the shared methodology guides `kataliarc-pohl`, `kataliarc-toulmin`, and `kataliarc-walton` as skills. Claude Code uses `CLAUDE.md` for its instructions, Gemini CLI uses `GEMINI.md` and a TOML command, and GitHub Copilot for VS Code uses `.github/copilot-instructions.md` and a custom agent definition. Methodological commands use the configured provider's local CLI with its own authentication.
+### Codex agents
 
-For Codex, `AGENTS.md` tells the main session which native subagent to use for each phase. The TOML files in `.codex/agents/` define the roles and their scope. Pohl handles elicitation and the utility tree, Toulmin designs and justifies alternatives, and Walton evaluates alternatives, reviews arguments, and recommends an outcome. Each subagent follows its corresponding `SKILL.md` under `.agents/skills/` for the method and artifact contracts.
+When you select Codex in `kataliarc init`, KatalIArc installs three native subagents. `AGENTS.md` tells the main Codex session when to delegate, what context to pass, and how to use the result.
+
+| Subagent | Definition | Responsibility |
+| --- | --- | --- |
+| `pohl` | `.codex/agents/pohl.toml` | Elicits context and quality scenarios, records confirmed priorities, and organizes the utility tree. |
+| `toulmin` | `.codex/agents/toulmin.toml` | Designs architectural alternatives and justifies their tactics and patterns. |
+| `walton` | `.codex/agents/walton.toml` | Evaluates alternatives, reviews arguments, and recommends an outcome for human decision. |
+
+Each subagent follows a methodology guide under `.agents/skills/`. The guides `kataliarc-pohl`, `kataliarc-toulmin`, and `kataliarc-walton` specify the steps and artifact contracts for their respective roles.
 
 For a user-level Codex installation, `--global` places the instructions and agents under `~/.codex/` and the skills under `~/.agents/skills/`. In a project already initialized with KatalIArc, preview managed changes with `kataliarc update --dry-run` and apply them with `kataliarc update --yes`. [Codex custom agents](https://learn.chatgpt.com/docs/agent-configuration/subagents#custom-agents)
+
+### Other providers
+
+KatalIArc installs the shared methodology skills for Claude Code, Gemini CLI, and GitHub Copilot for VS Code. Claude Code uses `CLAUDE.md` for its instructions, Gemini CLI uses `GEMINI.md` and a TOML command, and GitHub Copilot uses `.github/copilot-instructions.md` and a custom agent definition. Methodological commands use the configured provider's local CLI with its own authentication.
 
 ### Documentation
 
