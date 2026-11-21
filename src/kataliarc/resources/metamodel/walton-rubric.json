@@ -1,41 +1,66 @@
 {
-  "id": "kataliarc-quality-contribution-v1",
-  "version": "1.0.0",
+  "id": "kataliarc-walton-unified-v2",
+  "version": "2.0.0",
   "scope": "alternative-quality-scenario-pair",
-  "dimensions": [
-    {"id": "D1", "name": "applicability", "question": "Can the tactic be used under the problem conditions and constraints?"},
-    {"id": "D2", "name": "causal_mechanism", "question": "How does the design decision modify the scenario response?"},
-    {"id": "D3", "name": "direction", "question": "Is the effect positive, negative, neutral, or unknown?"},
-    {"id": "D4", "name": "sufficiency", "question": "Is the contribution sufficient to meet or prevent the scenario objective?"},
-    {"id": "D5", "name": "interactions", "question": "Do tactics complement, depend on, or interfere with each other in this alternative?"},
-    {"id": "D6", "name": "evidence", "question": "What evidence or explicit lack of evidence supports the conclusion?"},
-    {"id": "D7", "name": "refutation", "question": "What relevant objections or counterarguments remain?"},
-    {"id": "D8", "name": "coverage", "question": "Were all in-scope scenarios assessed for this alternative?"}
+  "criteria": [
+    {
+      "id": "C1",
+      "name": "Pertinencia",
+      "question": "¿La alternativa completa aborda el escenario de calidad priorizado?"
+    },
+    {
+      "id": "C2",
+      "name": "Mecanismo y evidencia",
+      "question": "¿Cómo interactúan las tácticas y qué pruebas, inferencias, precedentes o supuestos respaldan el efecto?"
+    },
+    {
+      "id": "C3",
+      "name": "Aplicabilidad",
+      "question": "¿La alternativa es compatible con las restricciones y condiciones del sistema?"
+    },
+    {
+      "id": "C4",
+      "name": "Suficiencia",
+      "question": "¿La combinación puede alcanzar la respuesta del escenario bajo las condiciones registradas?"
+    },
+    {
+      "id": "C5",
+      "name": "Consecuencias arquitectónicas",
+      "question": "¿Qué riesgos, no riesgos justificados, puntos de sensibilidad, trade-offs y mitigaciones se identificaron?"
+    },
+    {
+      "id": "C6",
+      "name": "Solidez argumentativa",
+      "question": "¿Qué preguntas críticas ponen a prueba los supuestos, analogías, excepciones y objeciones del argumento?"
+    }
   ],
-  "contribution_rules": [
-    {"direction": "POSITIVE", "sufficiency": "SUFFICIENT", "label": "MAKE (++)"},
-    {"direction": "POSITIVE", "sufficiency": "INSUFFICIENT", "label": "HELP (+)"},
-    {"direction": "POSITIVE", "sufficiency": "UNKNOWN", "label": "SomePositive"},
-    {"direction": "NEGATIVE", "sufficiency": "INSUFFICIENT", "label": "HURT (-)"},
-    {"direction": "NEGATIVE", "sufficiency": "SUFFICIENT", "label": "BREAK (--)"},
-    {"direction": "NEGATIVE", "sufficiency": "UNKNOWN", "label": "SomeNegative"},
-    {"direction": "UNKNOWN", "sufficiency": "SUFFICIENT", "label": "UNKNOWN (?)"},
-    {"direction": "UNKNOWN", "sufficiency": "INSUFFICIENT", "label": "UNKNOWN (?)"},
-    {"direction": "UNKNOWN", "sufficiency": "UNKNOWN", "label": "UNKNOWN (?)"},
-    {"direction": "NEUTRAL", "sufficiency": "UNKNOWN", "label": "NEUTRAL (0)", "requires_neutral_justification": true}
-  ],
-  "compliance_statuses": ["VERIFIED_SATISFIED", "VERIFIED_UNSATISFIED", "PREDICTED_UNDER_ASSUMPTIONS", "UNVERIFIED"],
-  "rules": [
-    "Do not assign MAKE without an explicit sufficiency rationale.",
-    "For known positive direction with unknown sufficiency, use SomePositive, not HELP.",
-    "Do not assign BREAK from a hypothetical risk alone.",
-    "For known negative direction with unknown sufficiency, use SomeNegative, not HURT.",
-    "Absence of evidence is not neutral evidence.",
-    "A qualitative label never proves empirical compliance with a response measure.",
-    "Assess every in-scope quality scenario for every alternative.",
-    "Reassess each combined-tactic alternative as a whole; do not sum tactic labels.",
-    "Record constraints, uncertainty, and objections explicitly.",
-    "Every classification requires a traceable causal argument."
+  "values": {
+    "CUMPLE": "Juicio suficientemente fundamentado para continuar. La verificación experimental requiere evidencia propia.",
+    "REQUIERE_AJUSTE": "Deficiencia corregible, combinación incompleta o riesgo con una corrección o mitigación concreta.",
+    "NO_CUMPLE": "Impedimento decisivo confirmado con evidencia directa y vinculado al escenario evaluado o a una restricción obligatoria. Un riesgo ATAM por sí solo es un hallazgo.",
+    "INCIERTO": "Información crítica faltante u objeción pendiente que impide emitir un juicio fundamentado."
+  },
+  "decision_rules": [
+    {
+      "value": "NO_CUMPLE",
+      "action": "DESCARTAR",
+      "rule": "R1"
+    },
+    {
+      "value": "INCIERTO",
+      "action": "POSPONER",
+      "rule": "R2"
+    },
+    {
+      "value": "REQUIERE_AJUSTE",
+      "action": "MODIFICAR",
+      "rule": "R3"
+    },
+    {
+      "value": "CUMPLE",
+      "action": "MANTENER",
+      "rule": "R4"
+    }
   ],
   "critical_question_schemes": {
     "practical_reasoning": [

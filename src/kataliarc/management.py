@@ -50,7 +50,7 @@ def doctor(project: Path, *, as_json: bool = False) -> int:
             add("OK", f"Proveedor configurado: {adapter.label}")
             add("OK" if adapter.detect() else "WARNING", f"Proveedor disponible: {adapter.executable}" if adapter.detect() else f"No se encuentra {adapter.executable} en PATH")
             missing = adapter.validate(project)
-            add("ERROR" if missing else "OK", "Integración incompleta: " + ", ".join(missing) if missing else "Skills e instrucciones presentes")
+            add("ERROR" if missing else "OK", "Integración incompleta: " + ", ".join(missing) if missing else "Archivos de integración presentes")
         if config.get("language") not in {"es", "en"}:
             add("ERROR", "Idioma inválido en config.json")
         else:
@@ -87,7 +87,7 @@ def doctor(project: Path, *, as_json: bool = False) -> int:
         from .evaluation import validate_rubric
         rubric = json.loads((source_root / "metamodel" / "walton-rubric.json").read_text(encoding="utf-8"))
         rubric_errors = validate_rubric(rubric)
-        add("ERROR" if rubric_errors else "OK", "Rúbrica Walton inválida: " + "; ".join(rubric_errors) if rubric_errors else "Rúbrica Walton y reglas deterministas alineadas")
+        add("ERROR" if rubric_errors else "OK", "Rúbrica Walton inválida: " + "; ".join(rubric_errors) if rubric_errors else "Rúbrica Walton C1–C6 y reglas deterministas alineadas")
     except (OSError, json.JSONDecodeError) as exc:
         add("ERROR", f"Rúbrica Walton ausente o inválida: {exc}")
     from .adr import validate_record

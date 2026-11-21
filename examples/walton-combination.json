@@ -1,0 +1,477 @@
+{
+  "description": "Fictional data for the horizontal scaling and cache combination. Source references identify illustrative evidence, not project measurements.",
+  "context": {
+    "quality_scenarios": [
+      {
+        "id": "QS-01",
+        "quality_attribute": "performance",
+        "priority": "A",
+        "description": "Under peak load, API reads meet the recorded latency target.",
+        "mandatory": false
+      },
+      {
+        "id": "QS-02",
+        "quality_attribute": "consistency",
+        "priority": "B",
+        "description": "After an acknowledged write, clients read the current version.",
+        "mandatory": true
+      }
+    ],
+    "constraints": [
+      "Each read returns the current version after a successful write."
+    ],
+    "references": [
+      "EV-LOAD",
+      "EV-VERSION",
+      "EV-TRACE"
+    ],
+    "business_goals": [
+      "Keep reliable reads under peak traffic."
+    ],
+    "business_requirements": [
+      "Return the current version after an acknowledged write."
+    ],
+    "quality_attributes": [
+      "performance",
+      "consistency"
+    ]
+  },
+  "utility_tree": {
+    "quality_attributes": [
+      {
+        "name": "performance",
+        "scenario_ids": [
+          "QS-01"
+        ]
+      },
+      {
+        "name": "consistency",
+        "scenario_ids": [
+          "QS-02"
+        ]
+      }
+    ]
+  },
+  "tactics": {
+    "tactics": [
+      {
+        "id": "T-SCALE",
+        "name": "Horizontal scaling"
+      },
+      {
+        "id": "T-CACHE",
+        "name": "Bounded cache"
+      }
+    ],
+    "alternatives": [
+      {
+        "id": "ALT-003",
+        "description": "Horizontal scaling with bounded cache and version-aware invalidation",
+        "tactic_ids": [
+          "T-SCALE",
+          "T-CACHE"
+        ]
+      }
+    ],
+    "scenario_arguments": [
+      {
+        "scenario_id": "QS-01",
+        "tactic_id": "T-CACHE",
+        "claim": "Cache hits reduce backend read load on scaled replicas.",
+        "grounds": [
+          "EV-TRACE records more cache hits and fewer storage reads."
+        ],
+        "warrant": "A fresh cache hit skips a storage read.",
+        "backing": [
+          "Catalogue entry on maintaining multiple copies."
+        ],
+        "qualifier": "Applies to warm cache traffic with reachable version checks.",
+        "rebuttal": "Simultaneous cold misses can saturate the authoritative store.",
+        "evidence_status": "documentada",
+        "source_refs": [
+          "EV-TRACE"
+        ]
+      }
+    ],
+    "pattern_tactic_interactions": [],
+    "tactic_interactions": [
+      {
+        "description": "Scaling multiplies the number of caches. Coordinated warm-up reduces correlated misses.",
+        "tactic_ids": [
+          "T-SCALE",
+          "T-CACHE"
+        ]
+      }
+    ]
+  },
+  "evaluation": {
+    "rubric_version": "kataliarc-walton-unified-v2",
+    "skill_version": "2.0.0",
+    "assessments": [
+      {
+        "alternative_id": "ALT-003",
+        "scenario_id": "QS-01",
+        "tactic_ids": [
+          "T-SCALE",
+          "T-CACHE"
+        ],
+        "criteria": {
+          "C1": {
+            "value": "CUMPLE",
+            "justification": "Both tactics target read latency at peak load by limiting queue depth and repeated reads.",
+            "evidence_refs": [
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-LOAD: fictional peak-load test for the assembled design"
+              }
+            ],
+            "assumptions": []
+          },
+          "C2": {
+            "value": "CUMPLE",
+            "justification": "Replicas absorb concurrency while cache hits bypass storage. The trace shows that synchronized misses bypass this benefit.",
+            "evidence_refs": [
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-TRACE: fictional request trace of cache hits and misses"
+              },
+              {
+                "kind": "CATALOGO",
+                "reference": "Catalogue entry on maintaining multiple copies"
+              },
+              {
+                "kind": "ANALOGIA",
+                "reference": "EV-ADR-07: historical distributed invalidation example",
+                "adr_id": "ADR-007"
+              }
+            ],
+            "assumptions": [
+              "Historical invalidation semantics are comparable only when version checks are enforced."
+            ]
+          },
+          "C3": {
+            "value": "CUMPLE",
+            "justification": "Reads validate the authoritative version before reusing a cached value, preserving the consistency constraint.",
+            "evidence_refs": [
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-VERSION: fictional read-after-write test using authoritative version checks"
+              }
+            ],
+            "assumptions": []
+          },
+          "C4": {
+            "value": "REQUIERE_AJUSTE",
+            "justification": "The warmed deployment supports the target in the observed sample, but a simultaneous cold rollout requires mitigation.",
+            "evidence_refs": [
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-LOAD: fictional peak-load test for the assembled design"
+              },
+              {
+                "kind": "INFERENCIA",
+                "reference": "H-01: correlated cold misses may saturate storage after rollout"
+              }
+            ],
+            "assumptions": [
+              "Replicas restart during a rolling deployment."
+            ],
+            "adjustment": "Stagger cache warm-up across replicas and verify cold-start latency during a peak-load replay.",
+            "pending_information": [
+              "Cold-start latency from the peak-load replay after staggered warm-up."
+            ]
+          },
+          "C5": {
+            "value": "CUMPLE",
+            "justification": "R-01, SP-01 and TO-01 document the rollout risk, cache retention sensitivity and consistency/latency trade-off.",
+            "evidence_refs": [
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-TRACE: fictional request trace of cache hits and misses"
+              },
+              {
+                "kind": "INFERENCIA",
+                "reference": "H-01: correlated cold misses may saturate storage after rollout"
+              }
+            ],
+            "assumptions": []
+          },
+          "C6": {
+            "value": "CUMPLE",
+            "justification": "Critical review identified the limited transfer of a historical result and bounded the inference to the observed workload.",
+            "evidence_refs": [
+              {
+                "kind": "ANALOGIA",
+                "reference": "EV-ADR-07: historical distributed invalidation example",
+                "adr_id": "ADR-007"
+              },
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-TRACE: fictional request trace of cache hits and misses"
+              }
+            ],
+            "assumptions": []
+          }
+        },
+        "critical_question_assessments": [
+          {
+            "scheme": "analogy",
+            "question": "Is the historical ADR context comparable?",
+            "claim_ref": "ALT-003/QS-01/C2",
+            "answer": "The precedent lacks simultaneous replica restart. Its applicability is limited to steady-state behavior.",
+            "result": "challenged",
+            "evidence_refs": [
+              {
+                "kind": "ANALOGIA",
+                "reference": "EV-ADR-07: historical distributed invalidation example",
+                "adr_id": "ADR-007"
+              },
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-TRACE: fictional request trace of cache hits and misses"
+              }
+            ],
+            "objection": "Warm-cache historical data does not establish cold-rollout sufficiency."
+          }
+        ]
+      },
+      {
+        "alternative_id": "ALT-003",
+        "scenario_id": "QS-02",
+        "tactic_ids": [
+          "T-SCALE",
+          "T-CACHE"
+        ],
+        "criteria": {
+          "C1": {
+            "value": "CUMPLE",
+            "justification": "The version check explicitly addresses current-version reads after acknowledged writes.",
+            "evidence_refs": [
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-VERSION: fictional read-after-write test using authoritative version checks"
+              }
+            ],
+            "assumptions": []
+          },
+          "C2": {
+            "value": "CUMPLE",
+            "justification": "On a version mismatch a replica rereads from the authoritative store, including during invalidation delay.",
+            "evidence_refs": [
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-VERSION: fictional read-after-write test using authoritative version checks"
+              },
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-TRACE: fictional request trace of cache hits and misses"
+              }
+            ],
+            "assumptions": []
+          },
+          "C3": {
+            "value": "CUMPLE",
+            "justification": "The mechanism depends on the recorded guarantee that acknowledgements follow the authoritative version update.",
+            "evidence_refs": [
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-VERSION: fictional read-after-write test using authoritative version checks"
+              }
+            ],
+            "assumptions": [
+              "Every path uses the authoritative store for version checks."
+            ]
+          },
+          "C4": {
+            "value": "CUMPLE",
+            "justification": "The measured read-after-write cases support the expected response for the tested failure mode.",
+            "evidence_refs": [
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-VERSION: fictional read-after-write test using authoritative version checks"
+              }
+            ],
+            "assumptions": [
+              "The test covers one invalidation delay scenario."
+            ]
+          },
+          "C5": {
+            "value": "CUMPLE",
+            "justification": "NR-01 explains why delayed invalidation did not return stale data in the observed cases, and TO-01 records the latency cost.",
+            "evidence_refs": [
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-VERSION: fictional read-after-write test using authoritative version checks"
+              },
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-TRACE: fictional request trace of cache hits and misses"
+              }
+            ],
+            "assumptions": []
+          },
+          "C6": {
+            "value": "CUMPLE",
+            "justification": "The direct test answers the critical stale-read objection for delayed invalidation.",
+            "evidence_refs": [
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-VERSION: fictional read-after-write test using authoritative version checks"
+              }
+            ],
+            "assumptions": []
+          }
+        },
+        "critical_question_assessments": [
+          {
+            "scheme": "causal_argument",
+            "question": "What conditions could prevent the expected result?",
+            "claim_ref": "ALT-003/QS-02/C4",
+            "answer": "Within the tested invalidation delay, authoritative version comparison forced a refresh.",
+            "result": "supported",
+            "evidence_refs": [
+              {
+                "kind": "DIRECTA",
+                "reference": "EV-VERSION: fictional read-after-write test using authoritative version checks"
+              }
+            ],
+            "objection": null
+          }
+        ]
+      }
+    ],
+    "risks": [
+      {
+        "id": "R-01",
+        "decision_id": "ALT-003",
+        "scenario_ids": [
+          "QS-01"
+        ],
+        "causal_mechanism": "Multiple new replicas miss the same keys at launch.",
+        "consequence": "Peak backend load may delay reads.",
+        "evidence": [
+          {
+            "kind": "INFERENCIA",
+            "reference": "H-01: correlated cold misses may saturate storage after rollout"
+          }
+        ],
+        "status": "HYPOTHETICAL",
+        "mitigation": "Stagger cache warm-up."
+      }
+    ],
+    "no_risks": [
+      {
+        "id": "NR-01",
+        "decision_id": "ALT-003",
+        "scenario_ids": [
+          "QS-02"
+        ],
+        "justification": "Delayed invalidation did not lead to stale reads in the observed failure case because a version mismatch forces a refresh.",
+        "evidence": [
+          {
+            "kind": "DIRECTA",
+            "reference": "EV-VERSION: fictional read-after-write test using authoritative version checks"
+          }
+        ]
+      }
+    ],
+    "sensitivity_points": [
+      {
+        "id": "SP-01",
+        "alternative_id": "ALT-003",
+        "property": "Cache retention",
+        "scenario_id": "QS-01",
+        "response_measure": "Peak read latency",
+        "causal_mechanism": "Retention controls repeated lookup hits",
+        "variation_effect": "Shorter retention may increase misses.",
+        "status": "CANDIDATE",
+        "evidence": [
+          {
+            "kind": "DIRECTA",
+            "reference": "EV-TRACE: fictional request trace of cache hits and misses"
+          }
+        ]
+      }
+    ],
+    "tradeoffs": [
+      {
+        "id": "TO-01",
+        "decision_id": "ALT-003",
+        "property": "Authoritative version check",
+        "affected_scenario_ids": [
+          "QS-01",
+          "QS-02"
+        ],
+        "positive_effects": [
+          "Refreshes stale cache slots."
+        ],
+        "negative_effects": [
+          "Adds an authoritative lookup on reads."
+        ],
+        "shared_mechanism": "The same version request protects consistency and adds work to the read path.",
+        "business_priorities": [
+          "Peak latency and current-version reads"
+        ],
+        "assumptions": [
+          "Version service is reachable."
+        ],
+        "evidence": [
+          {
+            "kind": "DIRECTA",
+            "reference": "EV-VERSION: fictional read-after-write test using authoritative version checks"
+          },
+          {
+            "kind": "DIRECTA",
+            "reference": "EV-TRACE: fictional request trace of cache hits and misses"
+          }
+        ],
+        "mitigations": [
+          "Coalesce duplicate version lookups."
+        ]
+      }
+    ],
+    "iteration": 0,
+    "iteration_requests": [
+      {
+        "request_type": "argument_revision",
+        "reason": "R3 MODIFICAR",
+        "target_alternative_ids": [
+          "ALT-003"
+        ],
+        "target_scenario_ids": [
+          "QS-01"
+        ],
+        "request_for_toulmin": "QS-01 C4: Stagger cache warm-up across replicas and verify cold-start latency during a peak-load replay.",
+        "status": "PENDING"
+      }
+    ],
+    "iteration_history": [],
+    "alternative_results": [
+      {
+        "alternative_id": "ALT-003",
+        "scenario_ids": [
+          "QS-01",
+          "QS-02"
+        ],
+        "tactic_ids": [
+          "T-CACHE",
+          "T-SCALE"
+        ],
+        "criteria": {
+          "C1": "CUMPLE",
+          "C2": "CUMPLE",
+          "C3": "CUMPLE",
+          "C4": "REQUIERE_AJUSTE",
+          "C5": "CUMPLE",
+          "C6": "CUMPLE"
+        },
+        "action": "MODIFICAR",
+        "rule": "R3"
+      }
+    ]
+  },
+  "review": {
+    "review_summary": "Retain the consistency evidence and ask Toulmin to mitigate the cold-rollout gap before comparison.",
+    "recommended_decision": "Keep the recommendation provisional pending the modification and peak-load replay."
+  }
+}

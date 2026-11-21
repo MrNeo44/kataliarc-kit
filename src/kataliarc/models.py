@@ -1,6 +1,6 @@
 """Tipos del metamodelo declarativo (contrato serializado en JSON)."""
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, Optional
 
 Priority = Literal["A", "M", "B", "pendiente"]
 EvidenceStatus = Literal["documentada", "inferencia/hipótesis", "desconocida"]
@@ -12,7 +12,7 @@ class QualityScenario:
     description: str
     quality_attribute: str
     priority: Priority = "pendiente"
-    acceptance_criteria: str | None = None
+    acceptance_criteria: Optional[str] = None
     known_context: list[str] = field(default_factory=list)
     missing_information: list[str] = field(default_factory=list)
     mandatory: bool = False
@@ -32,7 +32,7 @@ class ArchitecturalArgument:
 
 @dataclass
 class DecisionOutcome:
-    selected_alternative_id: str | None = None
+    selected_alternative_id: Optional[str] = None
     status: Literal["definitivo", "provisional", "indeterminado"] = "indeterminado"
     tradeoffs: list[str] = field(default_factory=list)
     risks: list[str] = field(default_factory=list)

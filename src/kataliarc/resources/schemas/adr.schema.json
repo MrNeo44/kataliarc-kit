@@ -158,6 +158,9 @@
             },
             "unresolved_evaluation_requests": {
               "type": "array"
+            },
+            "alternative_results": {
+              "type": "array"
             }
           }
         },

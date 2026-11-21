@@ -161,19 +161,16 @@ classDiagram
     +string alternative_id
     +string scenario_id
     +string[] tactic_ids
-    +string design_decision
-    +assessment_direction direction
-    +contribution_direction contribution_direction
-    +contribution_sufficiency sufficiency
-    +contribution_label contribution_label
-    +string rationale
-    +object causal_justification
-    +string[] assumptions
-    +object[] objections
+    +object criteria
     +CriticalQuestionAssessment[] critical_question_assessments
-    +string rubric_version
-    +evidence_status evidence_status
-    +compliance_status compliance_status
+  }
+  class AlternativeEvaluationResult {
+    +string alternative_id
+    +string[] scenario_ids
+    +string[] tactic_ids
+    +object criteria
+    +alternative_action action
+    +string rule
   }
   class SensitivityPoint {
     +string id
@@ -245,15 +242,16 @@ classDiagram
     +object recommended_decision
     +ArchitecturalArgument[] toulmin_arguments
     +ScenarioAssessment[] qualitative_scenario_assessments
+    +AlternativeEvaluationResult[] alternative_results
     +object evaluation_method
-    +ArchitecturalRisk[] risks_and_sensitivities
+    +object risks_and_sensitivities
     +TradeOff[] tradeoffs
     +object[] walton_critical_questions
     +object[] objections_and_counterarguments
     +object evidence_and_references
     +string[] assumptions_and_uncertainties
     +string[] expected_consequences
-    +string[] pending_verification
+    +object pending_verification
   }
   class ArchitecturalArgument {
     +string claim
@@ -321,3 +319,6 @@ classDiagram
   ADRContent --> ArchitecturalRisk : records risks
   ADRContent --> TradeOff : records trade-offs
   ArchitecturalArgument --> ArchitecturalAlternative : supports or qualifies
+
+  ScenarioAssessment --> AlternativeEvaluationResult : consolidated by criterion
+  ADRContent --> AlternativeEvaluationResult : preserves rule and action

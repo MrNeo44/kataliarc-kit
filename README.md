@@ -1,28 +1,78 @@
+<p align="center">
+  <img
+    src="assets/branding/kataliarc-banner.png"
+    alt="KatalIArc Kit — AI-assisted software architecture decisions"
+    width="100%"
+  />
+</p>
+
 # KatalIArc Kit
 
 A cross-platform CLI for traceable software architecture decisions using quality scenarios, tactics, high-level patterns, structured arguments, and qualitative evaluation. Its methodology is shared across Codex, Claude Code, Gemini CLI, and GitHub Copilot. Toulmin can search a configured OpenAI vector store; after explicit user approval, KatalIArc can add accepted ADR projections to that store. Local ADR JSON and Markdown remain authoritative. It does not implement formal ATAM or automated compliance inference.
 
+## Key features
+
+- Capture stakeholder context, quality scenarios, and confirmed priorities in a utility tree.
+- Propose architectural tactics and alternatives with traceable Toulmin arguments.
+- Compare alternatives and review the evidence, risks, and trade-offs with Walton's critical questions.
+- Track versioned architecture decision records (ADRs) through review and explicit approval.
+
 ## Installation
 
-Python 3.11 or later. Install KatalIArc once for your user from GitHub with [uv](https://docs.astral.sh/uv/getting-started/installation/):
+KatalIArc Kit 0.2.0 supports CPython 3.9 through 3.15. Use pip 21.3 or later for editable installation. On macOS, use a Python installation that provides pip, such as the installer from python.org.
 
 ```sh
-uv tool install kataliarc-kit --from git+https://github.com/MrNeo44/kataliarc-kit.git
-uv tool update-shell
+git clone https://github.com/MrNeo44/kataliarc-kit.git
+cd kataliarc-kit
+python3 --version
+python3 -m pip install -e .
+python3 -m pip show kataliarc-kit
 ```
 
-Open a new terminal after `uv tool update-shell`. The `kataliarc` command will then be available from any project directory. uv manages the CLI in a user-level isolated environment, separate from each project's Python environment.
+The editable installation uses the checkout in place. Keep it at the same path, or use `python3 -m pip install .` for a regular installation. If pip reports a permissions error on a Python installation you manage, use `python3 -m pip install --user -e .`.
 
-Initialize the repository where you want to use KatalIArc by changing into it and running `kataliarc init`. Project integrations and architecture artifacts are created in that repository.
+If Homebrew's Python reports `externally-managed-environment`, PEP 668 blocks the standard command. To keep using that interpreter without a virtual environment, explicitly allow the install for your user with `python3 -m pip install --user --break-system-packages -e .`. This setting applies to that invocation, and packages in your user site can take precedence over Homebrew packages. To use the standard command, choose a user-managed Python such as python.org's installer. [Homebrew's Python policy](https://docs.brew.sh/Language-Runtimes-and-Packages#python) · [pip install options](https://pip.pypa.io/en/stable/cli/pip_install/#options)
 
-For development from a local checkout, use a project virtual environment and install with `python -m pip install -e .`.
+### Make the command available in Zsh
+
+Run this block in the current terminal if `command -v kataliarc` returns nothing. To load it in new Zsh sessions, add the block once to `~/.zshrc`, after the configuration that selects your `python3`. It looks for the launcher in the user and default script directories of that interpreter and adds the directory only if it is missing from `PATH`.
+
+```zsh
+if kataliarc_scripts=$(python3 -c '
+import os
+import site
+import sysconfig
+
+for directory in (os.path.join(site.getuserbase(), "bin"), sysconfig.get_path("scripts")):
+    launcher = os.path.join(directory, "kataliarc")
+    if os.path.isfile(launcher) and os.access(launcher, os.X_OK):
+        print(directory)
+        break
+' 2>/dev/null); then
+    if [[ -n "$kataliarc_scripts" && ":$PATH:" != *":$kataliarc_scripts:"* ]]; then
+        export PATH="$kataliarc_scripts:$PATH"
+    fi
+fi
+unset kataliarc_scripts
+```
+
+```sh
+command -v kataliarc
+kataliarc --help
+cd /path/to/your/project
+kataliarc init
+```
+
+The command is available from any directory on that `PATH`. Initialization writes the project integration and architecture artifacts in the selected directory. After switching Python installations, reinstall KatalIArc with the new `python3` so its launcher points to that interpreter.
+
+Python 3.9 is the minimum because the build uses setuptools 77 or later for SPDX license metadata and the update command uses dictionary union, which Python 3.9 introduced. pip resolves compatible releases of the build and runtime dependencies for the selected interpreter.
 
 ## Initialization
 
-In an interactive terminal, `kataliarc init` guides you through four steps: agent, location, language, and confirmation. It plays a very soft retro 8-bit tune by default; pass `--no-music` to mute it. The screen clearing and music affect only the local terminal and machine.
+In an interactive terminal, `kataliarc init` guides you through provider selection, location, language, and confirmation. It plays a very soft retro 8-bit tune by default; pass `--no-music` to mute it. The screen clearing and music affect only the local terminal and machine.
 
 ```text
-Select your AI coding agent:
+Select your AI coding provider:
 
   > OpenAI Codex (installed)
     Claude Code (not installed)
@@ -32,7 +82,7 @@ Select your AI coding agent:
 Use ↑ ↓ to navigate and Enter to select.
 ```
 
-Detection only reports availability. Files can still be generated when the provider's CLI is not installed. In a non-interactive terminal, specify the agent explicitly:
+Detection reports CLI availability. Files can still be generated when the provider's CLI is unavailable. In a non-interactive terminal, select the provider with `--agent`.
 
 ```sh
 kataliarc init --agent codex --directory . --language en
@@ -45,7 +95,11 @@ Generated artifacts and requested responses support English (`en`) and Spanish (
 
 ## Integrations
 
-KatalIArc installs three skills—Pohl, Toulmin, and Walton—in each provider's skill directory, along with project instructions. For Codex, project skills go in `.agents/skills/kataliarc-pohl/`, `.agents/skills/kataliarc-toulmin/`, and `.agents/skills/kataliarc-walton/`; project-wide instructions go in `AGENTS.md`. Walton owns scenario evaluation, Walton-style critical review, and recommendations. Claude Code uses `CLAUDE.md`; Gemini CLI uses `GEMINI.md` and a TOML command; GitHub Copilot for VS Code uses `.github/copilot-instructions.md`, skills, and a custom agent definition. KatalIArc does not install or authenticate provider software. Methodological role/action commands invoke the configured local CLI and require separate authentication.
+KatalIArc installs the shared methodology guides `kataliarc-pohl`, `kataliarc-toulmin`, and `kataliarc-walton` as skills. Claude Code uses `CLAUDE.md` for its instructions, Gemini CLI uses `GEMINI.md` and a TOML command, and GitHub Copilot for VS Code uses `.github/copilot-instructions.md` and a custom agent definition. Methodological commands use the configured provider's local CLI with its own authentication.
+
+For Codex, `AGENTS.md` tells the main session which native subagent to use for each phase. The TOML files in `.codex/agents/` define the roles and their scope. Pohl handles elicitation and the utility tree, Toulmin designs and justifies alternatives, and Walton evaluates alternatives, reviews arguments, and recommends an outcome. Each subagent follows its corresponding `SKILL.md` under `.agents/skills/` for the method and artifact contracts.
+
+For a user-level Codex installation, `--global` places the instructions and agents under `~/.codex/` and the skills under `~/.agents/skills/`. In a project already initialized with KatalIArc, preview managed changes with `kataliarc update --dry-run` and apply them with `kataliarc update --yes`. [Codex custom agents](https://learn.chatgpt.com/docs/agent-configuration/subagents#custom-agents)
 
 ## Commands
 
@@ -73,14 +127,15 @@ kataliarc update --global --dry-run
 
 ### Command responsibilities
 
-| Command | What it does | Methodological skill |
+| Command | What it does | Role |
 | --- | --- | --- |
 | `help` | Lists general commands and methodological role/actions | None; local help |
-| `init` | Sets up the project and installs the skills | None; configures the selected provider |
+| `init` | Sets up the project and installs the selected provider's integration | None; local setup |
 | `pohl elicit` | Collects context and quality scenarios | Pohl |
 | `pohl prioritize` | Organizes the utility tree and priorities | Pohl, with client confirmation |
 | `toulmin design` | Proposes tactics and argued alternatives | Toulmin |
-| `walton evaluate` | Assesses every alternative against every in-scope scenario; records contribution separately from compliance, plus risks, sensitivity points, and trade-offs | Walton (ATAM + qualitative NFR/GRL contribution semantics) |
+| `walton evaluate` | Assesses each complete alternative with C1–C6 and computes its action | Walton |
+| `walton evaluate --finalize` | Validates recorded judgments and computes actions locally | Deterministic rules |
 | `walton review` | Applies explicit Walton critical-question schemes to causal claims, evidence, assumptions, analogies, and consequences | Walton |
 | `walton decide` | Integrates findings and recommends a supported, provisional, or indeterminate outcome | Walton |
 | `validate` | Checks artifact structure and some references | None; automatic validation |
@@ -89,7 +144,7 @@ kataliarc update --global --dry-run
 | `doctor` | Diagnoses the installation and its resources | None; automatic diagnostics |
 | `update` | Updates KatalIArc-managed resources | None; automatic maintenance |
 
-The canonical role/action form invokes the provider configured by `init` directly:
+Role/action commands invoke the provider configured by `init`. With Codex, the prompt asks the main session to delegate the phase to its matching subagent and wait for the result. If delegation is unavailable, it asks the session to apply the skill directly.
 
 ```sh
 kataliarc pohl elicit
@@ -114,7 +169,7 @@ kataliarc decide --retry-index ADR-001
 kataliarc decide --accept ADR-002 --supersedes ADR-001
 ```
 
-Indexing runs asynchronously in a detached local worker; approval returns while the ADR's indexing status is `PENDING` or `INDEXING`. Check progress with `kataliarc decide --show ADR-001` or `kataliarc status`. If indexing fails, the ADR remains `ACCEPTED` and its independent indexing status becomes `FAILED`; retry with `--retry-index`. KatalIArc stores the complete ADR locally and indexes a retrieval projection with origin, version, approval, scenario, tactic, and rubric metadata. Rejected and proposed ADRs are never indexed. Superseded ADRs remain in local history and are marked so Toulmin does not treat them as current. Acceptance records the user's choice; it does not prove empirical compliance. The evaluation stored in the ADR is a qualitative NFR/GRL-oriented scenario assessment, not a formal ATAM result.
+Indexing runs asynchronously in a detached local worker; approval returns while the ADR's indexing status is `PENDING` or `INDEXING`. Check progress with `kataliarc decide --show ADR-001` or `kataliarc status`. If indexing fails, the ADR remains `ACCEPTED` and its independent indexing status becomes `FAILED`; retry with `--retry-index`. KatalIArc stores the complete ADR locally and indexes a retrieval projection with origin, version, approval, scenario, tactic, and rubric metadata. Rejected and proposed ADRs are never indexed. Superseded ADRs remain in local history and are marked so Toulmin does not treat them as current. Acceptance records the user's choice; it does not prove empirical compliance. The ADR records the rubric judgments, deterministic actions, and ATAM-inspired findings.
 
 ### Using Pohl
 
@@ -125,11 +180,11 @@ Indexing runs asynchronously in a detached local worker; approval returns while 
 
 `context.json` is the source of truth for scenario descriptions and priorities. `utility-tree.json` contains references only; it does not duplicate scenario descriptions or priorities.
 
-The role determines the methodological skill, and the action determines the phase. Only the pairs shown in the command table are valid. Methodological commands invoke the configured provider. Only the Toulmin `design` action prepares repository evidence and performs RAG retrieval for architecture work; `rag-test` is a separate one-query connection diagnostic and does not invoke a methodological agent.
+Only the role/action pairs shown in the command table are valid. The Toulmin `design` action prepares repository evidence and performs RAG retrieval for architecture work. `rag-test` runs a separate one-query connection diagnostic.
 
-### What each skill takes from the process and metamodel
+### How the roles use the process and metamodel
 
-| Skill | Process responsibility | Main metamodel concepts | Handoff |
+| Role | Process responsibility | Main metamodel concepts | Handoff |
 | --- | --- | --- | --- |
 | Pohl | Elicit stakeholder context, business problem/goals/requirements, constraints, drivers, and quality scenarios; expose gaps and confirm priorities | `Stakeholder`, `BusinessProblem`, `BusinessGoal`, `BusinessRequirement`, `ArchitecturalProblem`, `ArchitecturalConstraint`, `ArchitecturalDriver`, `QualityScenario`, `UtilityTreeBranch` | Toulmin receives traceable scenarios and constraints; priorities remain in `context.json` |
 | Toulmin | Generate tactics, arguments, interactions, and assembled alternatives | `ArchitecturalTactic`, `ArchitecturalPattern`, `ArchitecturalArgument`, `ArchitecturalAlternative` | Walton evaluates the alternatives |
@@ -137,9 +192,24 @@ The role determines the methodological skill, and the action determines the phas
 
 Each skill file states its scope, inputs, outputs, and handoff. KatalIArc installs the machine-readable domain vocabulary in `.kataliarc/metamodel/domain.json`, its entity diagram in `domain.mmd`, the process guidance in `process.md`, and its activity diagram in `process.mmd`. `domain.json` is the single metamodel source; `walton-rubric.json` is the versioned qualitative classification contract. Schemas validate artifact structure. Each skill is instructed to read the shared process and use only its relevant concepts.
 
-Walton assesses the complete alternative directly against each quality scenario; tactic labels are not summed. The qualitative labels (`MAKE`, `HELP`, `SomePositive`, `HURT`, `BREAK`, `SomeNegative`, `UNKNOWN`, `NEUTRAL`) encode direction and sufficiency only. Compliance remains a separate state and requires evidence for verified outcomes. The CLI checks scenario-pair coverage, references, causal justification fields, and the direction/sufficiency-to-label mapping, but structural validation does not prove that a causal claim is true.
+### Unified Walton rubric
 
-Walton's bounded refinement loop can ask Toulmin for revised tactics, combinations, evidence, or arguments and then reevaluate. Configure `{"walton": {"max_iterations": 2}}` in `.kataliarc/config.json`; the default is 3 and the maximum is 5. Requests still open at the limit are recorded unresolved. The loop never accepts an ADR or automatically selects a winner.
+For each complete alternative, Walton assesses pertinence (C1), mechanism and evidence (C2), applicability (C3), sufficiency (C4), architectural consequences (C5), and argument strength (C6). Records in `.kataliarc/evaluation.json` retain each scenario judgment and its justification, evidence, assumptions, critical questions, and findings. An alternative ID identifies the assembled combination, and its tactic IDs link to the design produced by Toulmin.
+
+| First condition met | Action |
+| --- | --- |
+| R1 · Any `NO_CUMPLE` with a confirmed blocker linked to the assessed scenario or a mandatory constraint | `DESCARTAR` |
+| R2 · Any `INCIERTO` with missing critical information or an unresolved objection that prevents judgment | `POSPONER` |
+| R3 · Any `REQUIERE_AJUSTE` with a concrete correction | `MODIFICAR` |
+| R4 · All six criteria `CUMPLE` | `MANTENER` |
+
+The engine consolidates scenario judgments for each criterion using the same priority order. To validate `NO_CUMPLE`, record the decisive blocker, direct evidence, and an `impediment_ref` to the assessed scenario or an identified constraint marked `mandatory: true` in `context.json`. ATAM risks remain findings. A risk with an identified mitigation that is still needed can support `REQUIERE_AJUSTE`. Experimental compliance requires its own evidence. Existing `NO_CUMPLE` judgments need the new reference before they can be validated again.
+
+Run `kataliarc walton evaluate` to invoke Walton and compute the results. For existing valid judgments, `kataliarc walton evaluate --finalize` computes results without a model call. `kataliarc walton review` revalidates and recalculates before persisting a proposed ADR. `kataliarc walton decide` uses the saved actions to describe trade-offs and remaining decisions for the authorized decision maker.
+
+The evaluation command applies bounded Toulmin refinements only for `MODIFICAR`. Configure `{"walton": {"max_iterations": 2}}` in `.kataliarc/config.json` (default 3, maximum 5). Recurring requests stay explicitly unresolved when the cap is reached. In existing projects, install the managed rubric, schemas, and skill with `kataliarc update --yes`, then reevaluate current alternatives with `kataliarc walton evaluate`. Historical ADRs retain their version and source records.
+
+The [complete combination example](examples/walton-combination.json) uses fictional evidence to show how horizontal scaling and caching interact. It records two scenario assessments, a risk, a justified no risk, a sensitivity point, a trade-off, and Walton's objections. To reproduce it in an initialized project, copy its `context`, `utility_tree`, `tactics`, and `evaluation` objects to the corresponding files under `.kataliarc/`, then run `kataliarc walton evaluate --finalize`. The cold rollout requires an adjustment (C4), so the output is `ALT-003 MODIFICAR (R3)`.
 
 ### Toulmin design and historical ADR search
 
@@ -158,7 +228,7 @@ Historical ADRs provide context, not proof that a past decision fits the current
 
 `doctor` checks the provider, resources, JSON files, schemas, metamodel, and permissions without writing files. It also reports any knowledge paths present in older configurations. `--json` produces output without a banner or ANSI formatting. `update` only updates local resources listed in `.kataliarc/managed-files.json`; it reports conflicts, preserves conflicting files, and creates a `.kataliarc-backup` copy when updating a previously intact resource. `--dry-run` makes no changes; `--yes` enables non-interactive updates. KatalIArc does not download files from GitHub.
 
-Architecture workflow artifacts are written to `.kataliarc/` for review. The client representative must confirm priorities. Hypotheses are not treated as evidence, and contribution is recorded separately from compliance.
+Architecture workflow artifacts are written to `.kataliarc/` for review. The client representative must confirm priorities. Hypotheses carry their own provenance labels. Verified compliance requires independent evidence.
 
 `context.json` is the source of truth for quality scenario descriptions and priorities. `utility-tree.json` only groups scenario IDs under quality-attribute branches; it does not repeat descriptions or priority values. `kataliarc validate` checks that each tree reference exists and is grouped under the scenario's attribute.
 

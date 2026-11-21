@@ -7,6 +7,8 @@ from pathlib import Path
 import re
 from typing import Any
 
+from .evaluation import RUBRIC_VERSION, finalize_evaluation
+
 
 ADR_STATUSES = {"PROPOSED", "UNDER_REVIEW", "ACCEPTED", "REJECTED", "SUPERSEDED"}
 INDEX_STATUSES = {"NOT_REQUESTED", "PENDING", "INDEXING", "INDEXED", "FAILED"}
@@ -93,6 +95,8 @@ def compose_sections(root: Path, proposal: dict | None = None) -> dict:
     proposal = proposal if isinstance(proposal, dict) else {}
     scenarios = context.get("quality_scenarios", []) if isinstance(context, dict) else []
     utility = _source(root, "utility-tree.json", {})
+    if evaluation.get("rubric_version") == RUBRIC_VERSION:
+        evaluation = finalize_evaluation(evaluation, context, tactics, utility)
     branches = utility.get("quality_attributes", []) if isinstance(utility, dict) else []
     branch_by_id = {}
     for branch in branches if isinstance(branches, list) else []:
@@ -106,10 +110,14 @@ def compose_sections(root: Path, proposal: dict | None = None) -> dict:
         scenario_records.append({**scenario, "utility_tree_attribute": branch_by_id.get(scenario.get("id"))})
     recommendation = proposal.get("recommended_decision") or decision.get("rationale") or decision.get("selected_alternative_id") or (evaluation.get("comparison", {}) or {}).get("recommendation")
     alternatives = tactics.get("alternatives", []) if isinstance(tactics, dict) else []
-    selected_ids = {decision.get("selected_alternative_id")} if isinstance(decision, dict) else set()
-    if isinstance(recommendation, dict):
-        selected_ids.add(recommendation.get("alternative_id") or recommendation.get("selected_alternative_id"))
-    discarded = [item for item in alternatives if isinstance(item, dict) and item.get("id") not in selected_ids] if any(selected_ids) else []
+    alternative_results = evaluation.get("alternative_results", [])
+    discarded_ids = {item["alternative_id"] for item in alternative_results if item["action"] == "DESCARTAR"}
+    discarded = [item for item in alternatives if isinstance(item, dict) and item.get("id") in discarded_ids]
+    pending_information = [
+        {"alternative_id": row["alternative_id"], "scenario_id": row["scenario_id"], "criterion": criterion, "information": value["pending_information"]}
+        for row in evaluation.get("assessments", []) if isinstance(row, dict)
+        for criterion, value in row.get("criteria", {}).items() if value.get("pending_information")
+    ]
     historical_refs = proposal.get("historical_adr_refs", [])
     if not historical_refs and isinstance(toulmin_input, dict):
         rag = toulmin_input.get("rag", {})
@@ -139,17 +147,21 @@ def compose_sections(root: Path, proposal: dict | None = None) -> dict:
         "recommended_decision": recommendation or "No recommendation was recorded; decision remains provisional.",
         "toulmin_arguments": tactics.get("scenario_arguments", []),
         "qualitative_scenario_assessments": evaluation.get("assessments", []),
+        "alternative_results": alternative_results,
         "evaluation_method": {
-            "kind": "qualitative_nfr_grl_scenario_assessment",
-            "rubric_version": evaluation.get("rubric_version", "nfr-grl-qualitative-v1"),
+            "kind": "unified_walton_rubric" if evaluation.get("rubric_version") == RUBRIC_VERSION else "historical_qualitative_assessment",
+            "rubric_version": evaluation.get("rubric_version", "unknown"),
+            **{key: evaluation[key] for key in ("skill_version", "model_version") if key in evaluation},
             "source": ".kataliarc/evaluation.json",
-            "note": "This records the project's qualitative assessment; it is not proof of empirical compliance.",
+            "note": "The rubric records qualitative judgments and the rule applied to each alternative. Verified compliance requires empirical evidence.",
         },
-        "risks_and_sensitivities": proposal.get("risks_and_sensitivities") or {
+        "risks_and_sensitivities": {
+            **(proposal.get("risks_and_sensitivities") if isinstance(proposal.get("risks_and_sensitivities"), dict) else {}),
             "risks": evaluation.get("risks", []) or decision.get("risks", []),
+            "no_risks": evaluation.get("no_risks", []),
             "sensitivity_points": evaluation.get("sensitivity_points", []),
         },
-        "tradeoffs": proposal.get("tradeoffs") or evaluation.get("tradeoffs", []) or decision.get("tradeoffs", []) or (evaluation.get("comparison", {}) or {}).get("tradeoffs", []),
+        "tradeoffs": evaluation.get("tradeoffs", []) or proposal.get("tradeoffs") or decision.get("tradeoffs", []) or (evaluation.get("comparison", {}) or {}).get("tradeoffs", []),
         "walton_critical_questions": [
             *[question for assessment in evaluation.get("assessments", []) if isinstance(assessment, dict) for question in assessment.get("critical_question_assessments", [])],
             *_review_questions(review),
@@ -162,7 +174,10 @@ def compose_sections(root: Path, proposal: dict | None = None) -> dict:
         },
         "assumptions_and_uncertainties": proposal.get("assumptions_and_uncertainties", decision.get("unresolved_questions", [])),
         "expected_consequences": proposal.get("expected_consequences", []),
-        "pending_verification": proposal.get("pending_verification", decision.get("unresolved_questions", [])),
+        "pending_verification": {
+            "rubric": pending_information,
+            "review": proposal.get("pending_verification", decision.get("unresolved_questions", [])),
+        },
         "evaluation_iterations": evaluation.get("iteration_history", []),
         "unresolved_evaluation_requests": [request for request in evaluation.get("iteration_requests", []) if isinstance(request, dict) and request.get("status", "PENDING") in {"PENDING", "UNRESOLVED"}],
     }
@@ -188,7 +203,8 @@ def render_markdown(record: dict) -> str:
         ("alternatives_considered", "Alternatives considered and discarded"),
         ("recommended_decision", "Recommended decision"),
         ("toulmin_arguments", "Toulmin arguments"),
-        ("qualitative_scenario_assessments", "Qualitative NFR/GRL scenario assessment"),
+        ("qualitative_scenario_assessments", "Scenario judgments and evidence"),
+        ("alternative_results", "Rubric outcomes by alternative"),
         ("evaluation_method", "Evaluation method and rubric"),
         ("risks_and_sensitivities", "Risks and sensitivity points"),
         ("tradeoffs", "Trade-offs"),
@@ -380,7 +396,7 @@ def metadata_for(record: dict, project_id: str) -> dict:
         "accepted_at": record.get("indexing", {}).get("accepted_at", ""),
         "quality_scenario_ids": json.dumps(scenario_ids, ensure_ascii=False, separators=(",", ":")),
         "tactic_ids": json.dumps(tactic_ids, ensure_ascii=False, separators=(",", ":")),
-        "rubric_version": evaluation.get("rubric_version", "nfr-grl-qualitative-v1"),
+        "rubric_version": evaluation.get("rubric_version", "unknown"),
         "origin": "kataliarc",
         "index_key": index_key(project_id, record["adr_id"], version["version"]),
     }

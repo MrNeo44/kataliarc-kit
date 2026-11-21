@@ -1,6 +1,7 @@
 """Shared adapter contract and safe file installation."""
 from pathlib import Path
 import shutil
+from typing import Optional
 
 
 class BaseAdapter:
@@ -14,9 +15,7 @@ class BaseAdapter:
 
     def configure_global(self) -> None:
         """Switch resource paths to documented per-user locations where supported."""
-        if self.key == "codex":
-            self.instruction_files = {".codex/AGENTS.md": COMMON_INSTRUCTIONS}
-        elif self.key == "claude":
+        if self.key == "claude":
             self.instruction_files = {".claude/CLAUDE.md": COMMON_INSTRUCTIONS}
         elif self.key == "gemini":
             self.instruction_files = {".gemini/GEMINI.md": COMMON_INSTRUCTIONS}
@@ -26,7 +25,7 @@ class BaseAdapter:
             self.extra_files = {}
             self.capabilities = ("user-level skills", "no global instruction file generated")
 
-    def detect(self) -> str | None:
+    def detect(self) -> Optional[str]:
         return shutil.which(self.executable) if self.executable else None
 
     def validate(self, project: Path) -> list[str]:
@@ -86,10 +85,13 @@ class BaseAdapter:
         return True
 
 
-COMMON_INSTRUCTIONS = """<!-- KatalIArc managed -->
+RECORD_INSTRUCTIONS = """<!-- KatalIArc managed -->
 # KatalIArc Kit
 
-Use `.kataliarc/` as the architecture decision record. Preserve traceability and uncertainty labels; do not treat hypotheses as evidence or contribution as compliance. Follow the installed KatalIArc skills: Pohl for elicitation and utility tree, Toulmin for tactics and argumentation, and Walton for scenario evaluation, critical review, and recommendations. Keep decisions provisional when evidence or stakeholder confirmation is missing.
+Use `.kataliarc/` as the architecture decision record. Preserve traceability and uncertainty labels. Record hypotheses and evidence separately, and distinguish qualitative judgments from verified compliance. Keep decisions provisional when evidence or stakeholder confirmation is missing.
+"""
+COMMON_INSTRUCTIONS = RECORD_INSTRUCTIONS + """
+Use the installed methodology guides to carry out the requested phase. Apply `kataliarc-pohl` for elicitation and the utility tree, `kataliarc-toulmin` for architectural design and argumentation, and `kataliarc-walton` for scenario evaluation, critical review, and recommendations.
 """
 ADAPTERS: dict[str, type[BaseAdapter]] = {}
 

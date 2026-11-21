@@ -3,12 +3,13 @@ from dataclasses import dataclass
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 
 @dataclass
 class AgentResult:
     returncode: int
-    error: str | None = None
+    error: Optional[str] = None
 
 
 class CodexProvider:

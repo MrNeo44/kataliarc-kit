@@ -20,13 +20,15 @@ Before eliciting, read `.kataliarc/metamodel/process.md` and consult `.kataliarc
 - `.kataliarc/utility-tree.json`: groups scenario IDs under quality attributes. `kataliarc pohl prioritize` updates confirmed priorities in `context.json` and organizes the ID references here. Do not copy scenario descriptions or priorities into the tree.
 - Handoff: `kataliarc toulmin design` uses these scenarios to propose tactics and alternatives.
 
-### How to use Pohl
+### How to carry out Pohl's phases
 
-1. Add the client's available information to `.kataliarc/context.md` and review the existing `.kataliarc/context.json`.
-2. Run `kataliarc pohl elicit` to structure the context, requirements, constraints, and quality scenarios in `context.json`. Review the result and resolve or preserve any marked unknowns.
-3. Confirm scenario priorities with the client representative, then run `kataliarc pohl prioritize`. It records confirmed priorities in `context.json` and groups scenario IDs in `utility-tree.json`.
-4. Run `kataliarc validate` to check that the utility-tree references point to existing scenarios under the correct quality attributes.
-5. Continue with `kataliarc toulmin design` once the scenarios and constraints are ready to hand off.
+Apply the requested phase directly in the current session.
+
+1. Review the stakeholder information in `.kataliarc/context.md` and the existing `.kataliarc/context.json`.
+2. During elicitation, structure context, requirements, constraints, and quality scenarios in `context.json`. Resolve or record gaps based on the available information.
+3. During prioritization, record stakeholder-confirmed priorities in `context.json` and group scenario IDs in `utility-tree.json`.
+4. Use `kataliarc validate` to check that the utility-tree references point to existing scenarios under the correct quality attributes.
+5. Report what is ready for Toulmin and any open questions.
 
 Preserve provenance and missing information; do not turn inferences into facts. Set priority to `A`, `M`, or `B` only when the client representative confirms it. Keep `mandatory` separate from priority. When prioritizing, update priority in `context.json` and keep the utility tree as ID references only.
 

@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import wave
+from typing import Optional
 from prompt_toolkit.application import Application
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.key_binding import KeyBindings
@@ -191,10 +192,10 @@ def select_choice(question, options, *, default=0, input_stream=None, output_str
 def select_agent(input_stream=None, output_stream=None) -> str:
     installed = detect_agents()
     options = [(key, f"{label} ({'installed' if installed.get(key) else 'not installed'})") for key, label in AGENTS]
-    return _select(options, "Select your AI coding agent:", input_stream=input_stream, output_stream=output_stream)
+    return _select(options, "Select your AI coding provider:", input_stream=input_stream, output_stream=output_stream)
 
 
-def detect_agents() -> dict[str, str | None]:
+def detect_agents() -> dict[str, Optional[str]]:
     """Return executable paths for supported agents; None means unavailable."""
     commands = {"codex": "codex", "claude": "claude", "gemini": "gemini", "copilot": "copilot"}
     return {key: shutil.which(command) for key, command in commands.items()}

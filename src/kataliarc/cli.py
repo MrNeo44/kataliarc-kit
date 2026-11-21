@@ -5,12 +5,12 @@ import json
 from pathlib import Path
 import sys
 import subprocess
-from typing import Any
+from typing import Any, Optional
 import uuid
 from datetime import datetime, timezone
 
 from .adapters import ADAPTERS, get_adapter
-from .providers import AgentProvider
+from .providers import AgentProvider, AgentResult
 from .wizard import AGENTS, clear_terminal, play_retro_music, render_banner, select_agent, select_language, select_choice
 from .management import MANIFEST, doctor as run_doctor, update as run_update
 from .toulmin import build_design_prompt, build_toulmin_input, write_managed_json
@@ -27,7 +27,7 @@ from .adr import (
     update_indexing,
     validate_record as validate_adr_record,
 )
-from .evaluation import RUBRIC_VERSION, validate_evaluation
+from .evaluation import RUBRIC_VERSION, finalize_evaluation, prepare_refinements, validate_evaluation, validate_rubric
 import hashlib
 
 ROOT = Path.cwd()
@@ -36,7 +36,7 @@ FILES: dict[str, Any] = {
     "context.json": {"business_goals": [], "business_requirements": [], "constraints": [], "quality_attributes": [], "quality_scenarios": [], "references": []},
     "utility-tree.json": {"quality_attributes": []},
     "tactics.json": {"scenario_arguments": [], "tactics": [], "pattern_tactic_interactions": [], "tactic_interactions": [], "alternatives": []},
-    "evaluation.json": {"rubric_version": RUBRIC_VERSION, "assessments": [], "comparison": {"constraints": [], "dominance": [], "tradeoffs": [], "recommendation": None}, "risks": [], "sensitivity_points": [], "tradeoffs": [], "iteration": 0, "iteration_requests": [], "iteration_history": [], "assessment_history": []},
+    "evaluation.json": {"rubric_version": RUBRIC_VERSION, "assessments": [], "alternative_results": [], "comparison": {"constraints": [], "dominance": [], "tradeoffs": [], "recommendation": None}, "risks": [], "no_risks": [], "sensitivity_points": [], "tradeoffs": [], "iteration": 0, "iteration_requests": [], "iteration_history": [], "assessment_history": []},
     "review.json": {"objections": []},
     "decision.json": {"selected_alternative_id": None, "status": "indeterminado", "tradeoffs": [], "risks": [], "unresolved_questions": [], "rationale": ""},
 }
@@ -45,7 +45,7 @@ MD_FILES = {
     "utility-tree.md": "# Árbol de utilidad\n\nPrioridades A/M/B pendientes de confirmación del cliente representante.\n",
     "tactics.md": "# Tácticas y argumentos\n\nCompleta los argumentos y condiciones para todos los escenarios.\n",
     "alternatives.md": "# Alternativas arquitectónicas\n\nDescribe ensamblados, patrones, tácticas y adaptaciones estructurales.\n",
-    "evaluation.md": "# Evaluación cualitativa\n\nContribución y cumplimiento se valoran por separado.\n",
+    "evaluation.md": "# Evaluación cualitativa\n\nRegistra aquí la justificación de la rúbrica de Walton.\n",
     "review.md": "# Revisión crítica\n\nObjeciones y correcciones sugeridas.\n",
     "decision.md": "# Decisión\n\nEstado inicial: indeterminado.\n",
     "decisions/ADR-001.md": "# ADR-001: Decisión arquitectónica\n\n- Estado: propuesto\n- Contexto: pendiente\n- Decisión: pendiente\n- Alternativas: pendiente\n- Trade-offs y riesgos: pendiente\n- Información/validación pendiente: pendiente\n",
@@ -55,7 +55,7 @@ MD_FILES_EN = {
     "utility-tree.md": "# Utility tree\n\nA/M/B priorities pending confirmation by the client representative.\n",
     "tactics.md": "# Tactics and arguments\n\nComplete the arguments and conditions for every scenario.\n",
     "alternatives.md": "# Architectural alternatives\n\nDescribe assemblies, patterns, tactics, and structural adaptations.\n",
-    "evaluation.md": "# Qualitative evaluation\n\nContribution and compliance are assessed separately.\n",
+    "evaluation.md": "# Qualitative evaluation\n\nRecord the reasoning behind the Walton rubric judgments here.\n",
     "review.md": "# Critical review\n\nObjections and suggested corrections.\n",
     "decision.md": "# Decision\n\nInitial status: undetermined.\n",
     "decisions/ADR-001.md": "# ADR-001: Architecture decision\n\n- Status: proposed\n- Context: pending\n- Decision: pending\n- Alternatives: pending\n- Trade-offs and risks: pending\n- Pending information/validation: pending\n",
@@ -74,7 +74,7 @@ def write_json(path: Path, data: Any) -> bool:
     return write_new(path, json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 
 
-def init(agent: str, project: Path | None = None, *, overwrite: bool = False, interactive: bool = False, no_banner: bool = False, no_music: bool = False, confirm: bool = True, language: str | None = None, global_scope: bool = False, rag_vector_store_id: str | None = None) -> int:
+def init(agent: str, project: Optional[Path] = None, *, overwrite: bool = False, interactive: bool = False, no_banner: bool = False, no_music: bool = False, confirm: bool = True, language: Optional[str] = None, global_scope: bool = False, rag_vector_store_id: Optional[str] = None) -> int:
     global ROOT, DATA
     ROOT = (project or Path.cwd()).resolve()
     DATA = ROOT / ".kataliarc"
@@ -119,7 +119,10 @@ def init(agent: str, project: Path | None = None, *, overwrite: bool = False, in
             print(str(exc), file=sys.stderr)
             return 2
         print("\nKatalIArc Installation\n")
-        print(f"Agent          : {selected}\nLocation       : {'Global user installation' if global_scope else ROOT}\nLanguage       : {'Spanish' if language == 'es' else 'English'}\nSkills         : Pohl, Toulmin, Walton")
+        print(f"Provider       : {selected}\nLocation       : {'Global user installation' if global_scope else ROOT}\nLanguage       : {'Spanish' if language == 'es' else 'English'}")
+        if agent == "codex":
+            print("Codex subagents: Pohl, Toulmin, Walton")
+        print("Skills         : kataliarc-pohl, kataliarc-toulmin, kataliarc-walton")
         proceed = select_choice("Proceed with installation?", [("yes", "Yes"), ("no", "No")], default=0) if confirm else "yes"
         if proceed != "yes":
             print("Inicialización cancelada.")
@@ -131,7 +134,7 @@ def init(agent: str, project: Path | None = None, *, overwrite: bool = False, in
         print(f"La ruta del proyecto no es un directorio: {ROOT}", file=sys.stderr)
         return 2
     show_progress = interactive and getattr(sys.stdout, "isatty", lambda: False)()
-    progress_labels = ["Metamodelo", "Flujo de trabajo", "Agentes", "Rúbrica y schemas"]
+    progress_labels = ["Metamodelo", "Flujo de trabajo", "Integración del proveedor", "Rúbrica y schemas"]
 
     def progress(step: int) -> None:
         if not show_progress:
@@ -206,7 +209,7 @@ def init(agent: str, project: Path | None = None, *, overwrite: bool = False, in
         manifest = DATA / MANIFEST
         if not manifest.exists():
             manifest.write_text(json.dumps({"version": "0.2.0", "files": managed}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        elif overwrite:
+        elif overwrite or managed:
             prior = load_json(manifest)
             prior["version"] = "0.2.0"
             prior["files"].update({k: v for k, v in managed.items() if k not in prior["files"]})
@@ -246,7 +249,7 @@ def init(agent: str, project: Path | None = None, *, overwrite: bool = False, in
     print(f"Inicialización lista ({len(created)} archivos nuevos o actualizados). Proyecto: {DATA}")
     print("Validación de instalación correcta: rutas y configuración comprobadas.")
     print("Commands: kataliarc pohl elicit|prioritize, toulmin design, walton evaluate|review|decide, decide --help, validate, status")
-    print(f"Comienza con: kataliarc pohl elicit (agente seleccionado: {adapter.label})")
+    print(f"Comienza con: kataliarc pohl elicit (proveedor seleccionado: {adapter.label})")
     if show_progress:
         input("Presiona Enter para continuar...")
     return 0
@@ -337,7 +340,7 @@ def validate() -> int:
                     errors.append(f"tactics.json: argumento de {sid} no contiene {key}")
         evaluation = load_json(DATA / "evaluation.json")
         tactics = load_json(DATA / "tactics.json")
-        if evaluation.get("assessments") or tactics.get("alternatives"):
+        if evaluation.get("assessments") or evaluation.get("alternative_results") or tactics.get("alternatives"):
             errors.extend(validate_evaluation(evaluation, context, tactics, utility))
     decisions_dir = DATA / "decisions"
     for path in decisions_dir.glob("ADR-*.json") if decisions_dir.is_dir() else []:
@@ -359,17 +362,17 @@ PROMPTS = {
     "elicit": "Lee context.md y completa context.json solo con información proporcionada. Marca incertidumbre y no inventes requisitos.",
     "prioritize": "Actualiza la prioridad en context.json solo cuando el cliente la haya confirmado. Organiza utility-tree.json como ramas por atributo con scenario_ids únicamente; si encuentras el formato antiguo con escenarios copiados, conviértelo preservando sus IDs y orden. No copies descripciones, restricciones ni prioridades. No asignes prioridad A/M/B si no está confirmada.",
     "design": "Desde todos los escenarios propone tácticas, argumentos Toulmin, interacciones y 2-3 alternativas ensambladas. Distingue hipótesis de evidencia.",
-    "evaluate": "Aplica los mecanismos Walton M1-M4. Lee .kataliarc/metamodel/walton-rubric.json; evalúa cada alternativa completa contra cada escenario del utility tree. Escribe evaluation.json y evaluation.md con assessments pareados y completos, etiquetas y cumplimiento separados, justificación causal, riesgos, puntos de sensibilidad y trade-offs trazables. Si hace falta trabajo de Toulmin, agrega iteration_requests con referencias válidas. No inventes métricas, evidencia ni cumplimiento.",
-    "review": "Aplica una segunda pasada de preguntas críticas Walton a cada evaluación y afirmación causal. Registra critical_question_assessments, objeciones y contraargumentos; corrige evaluaciones fundamentadamente conservando el historial. Completa review.json con decision_proposals si son independientes. No aceptes ni indexes el ADR.",
-    "decide": "Integra evaluación y revisión crítica; recomienda decisión definitiva, provisional o indeterminada con trade-offs, riesgos, condiciones y pendientes. No aceptes el ADR.",
+    "evaluate": "Evalúa cada alternativa completa con C1–C6 de .kataliarc/metamodel/walton-rubric.json y el contrato .kataliarc/schemas/evaluation.schema.json. Registra un assessment por alternativa y escenario del árbol de utilidad, confirmado, obligatorio o afectado. Evalúa cada combinación por sus interacciones. Registra justificaciones, fuentes, supuestos, hallazgos ATAM y preguntas críticas de Walton. Escribe .kataliarc/evaluation.json y la explicación en evaluation.md. KatalIArc calcula alternative_results.",
+    "review": "Revisa críticamente las valoraciones C1–C6 y las analogías, evidencia y excepciones que las sustentan. Registra las objeciones y sus estados en critical_question_assessments, conserva el historial y corrige solo los criterios afectados y sus dependencias. Completa review.json con la revisión y propuestas de ADR. KatalIArc recalcula las acciones. La aprobación corresponde al decisor autorizado.",
+    "decide": "Integra la evaluación y revisión, citando los alternative_results ya calculados en .kataliarc/evaluation.json. Describe diferencias, trade-offs, riesgos y pendientes. Si varias candidatas están en MANTENER, documenta las diferencias para la decisión humana. Escribe la recomendación en decision.json y decision.md. Trata evaluation.json como solo lectura y conserva los ADR en PROPOSED.",
 }
 PROMPTS_EN = {
     "elicit": "Read context.md and complete context.json only from provided information. Mark uncertainty; do not invent requirements.",
     "prioritize": "Update scenario priorities in context.json only when the client has confirmed them. Build utility-tree.json as quality-attribute branches containing scenario_ids only; if the legacy format with copied scenarios exists, convert it while preserving IDs and ordering. Do not copy descriptions, constraints, or priorities. Do not assign A/M/B unless confirmed.",
     "design": "From all scenarios, propose tactics, Toulmin arguments, interactions, and 2-3 assembled alternatives. Distinguish hypotheses from evidence.",
-    "evaluate": "Act as Walton and apply mechanisms M1-M4. Read .kataliarc/metamodel/walton-rubric.json. Evaluate each complete alternative against every scenario referenced by the utility tree. Write evaluation.json and evaluation.md with complete alternative/scenario pairs, separately classified contribution and compliance, causal justification, traceable ATAM risks, sensitivity points, and trade-offs. If Toulmin work is needed, add iteration_requests with valid references. Never invent metrics, thresholds, evidence, or compliance.",
-    "review": "Act as Walton in a second critical-review pass. Apply explicit Walton question schemes from .kataliarc/metamodel/walton-rubric.json to claims and scenario assessments. Record critical_question_assessments with scheme, question, claim_ref, answer, result, evidence_refs, and objection. Correct a classification only when a premise/evidence issue justifies it; preserve the previous assessment in assessment_history and log the revision. Update review.json with summary, questions, objections, and independent decision_proposals. Never accept or index an ADR.",
-    "decide": "Act as Walton. Integrate the revised evaluation and critical review; recommend a final, provisional, or indeterminate outcome with rationale, trade-offs, risks, limitations, and open questions. Do not mark an ADR accepted.",
+    "evaluate": "Evaluate each complete alternative with C1–C6 from .kataliarc/metamodel/walton-rubric.json and .kataliarc/schemas/evaluation.schema.json. Assess each alternative against each utility-tree, confirmed, mandatory, or affected scenario. Evaluate each combination through its interactions. Record reasoning, evidence, assumptions, ATAM findings and Walton critical questions. Write .kataliarc/evaluation.json and the narrative in evaluation.md. KatalIArc calculates alternative_results.",
+    "review": "Critically review the C1–C6 judgments and their analogies, evidence, assumptions, and exceptions. Record objections and their status in critical_question_assessments, preserve the history, and revise affected criteria and dependencies. Write the review and ADR proposals to review.json. KatalIArc recalculates the actions. The authorized decision maker owns approval.",
+    "decide": "Use the recorded alternative_results in .kataliarc/evaluation.json to explain the recommendation, trade-offs, risks, and open questions. Where several alternatives remain in MANTENER, describe their differences for the human decision. Write the recommendation to decision.json and decision.md. Treat evaluation.json as read-only and keep ADRs at PROPOSED.",
 }
 ROLE_ACTIONS = {
     "pohl": ("elicit", "prioritize"),
@@ -378,7 +381,59 @@ ROLE_ACTIONS = {
 }
 
 
-def run_stage(stage: str, with_agent: bool, *, repository: Path | None = None, rag_enabled: bool = True, provider_override: str | None = None) -> int:
+def _evaluation_inputs() -> tuple[dict, dict, dict]:
+    return tuple(load_json(DATA / filename) for filename in ("context.json", "tactics.json", "utility-tree.json"))
+
+
+def _save_evaluation(evaluation: dict) -> None:
+    path = DATA / "evaluation.json"
+    temporary = path.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(evaluation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
+def _publish_evaluation(evaluation: dict) -> dict:
+    evaluation = finalize_evaluation(evaluation, *_evaluation_inputs())
+    if not evaluation["alternative_results"]:
+        raise ValueError("Record at least one architectural alternative before evaluating.")
+    prepare_refinements(evaluation)
+    _save_evaluation(evaluation)
+    markdown = DATA / "evaluation.md"
+    content = markdown.read_text(encoding="utf-8") if markdown.is_file() else "# Walton\n"
+    start, end = "<!-- walton-results -->", "<!-- /walton-results -->"
+    lines = [start, "## Resultado de la rúbrica / Rubric outcome", ""]
+    for result in evaluation["alternative_results"]:
+        criteria = ", ".join(f"{key} {value}" for key, value in result["criteria"].items())
+        lines.append(f"- **{result['alternative_id']}** — **{result['action']}** ({result['rule']}). {criteria}.")
+    section = "\n".join([*lines, "", end])
+    if start in content and end in content.split(start, 1)[1]:
+        prefix, rest = content.split(start, 1)
+        content = prefix + section + rest.split(end, 1)[1]
+    else:
+        content = content.rstrip() + "\n\n" + section + "\n"
+    markdown.write_text(content, encoding="utf-8")
+    return evaluation
+
+
+def _retain_evaluation_history(current: dict, previous: dict) -> None:
+    for field in ("iteration_history", "assessment_history"):
+        history = current.get(field, [])
+        if isinstance(history, list) and isinstance(previous.get(field), list):
+            current[field] = previous[field] + [entry for entry in history if entry not in previous[field]]
+
+
+def _finalize_walton_evaluation() -> int:
+    try:
+        evaluation = _publish_evaluation(load_json(DATA / "evaluation.json"))
+    except (OSError, ValueError) as exc:
+        print(f"Walton evaluation validation failed: {exc}", file=sys.stderr)
+        return 1
+    for result in evaluation["alternative_results"]:
+        print(f"{result['alternative_id']} {result['action']} ({result['rule']})")
+    return 0
+
+
+def run_stage(stage: str, with_agent: bool, *, repository: Optional[Path] = None, rag_enabled: bool = True, provider_override: Optional[str] = None) -> int:
     if not DATA.exists():
         print("No existe .kataliarc/. Ejecuta kataliarc init --agent codex.", file=sys.stderr)
         return 2
@@ -422,22 +477,82 @@ def run_stage(stage: str, with_agent: bool, *, repository: Path | None = None, r
             for warning in retrieval["warnings"]:
                 print(f"RAG warning: {warning}", file=sys.stderr)
         provider = AgentProvider()
-        result = provider.run(agent, prompt, ROOT)
+
+        def run_phase(phase: str, phase_prompt: str) -> AgentResult:
+            if agent == "codex":
+                role = next(role for role, actions in ROLE_ACTIONS.items() if phase in actions)
+                phase_prompt = (
+                    f"Delegate the phase below to the `{role}` subagent and wait for its result. "
+                    f"If you cannot start that subagent, apply the `kataliarc-{role}` skill in the current session.\n\n"
+                    f"{phase_prompt}"
+                )
+            return provider.run(agent, phase_prompt, ROOT)
+
+        prior_evaluation = None
+        decision_before = {}
+        if stage in {"evaluate", "review", "decide"}:
+            try:
+                if validate_rubric(load_json(DATA / "metamodel/walton-rubric.json")):
+                    raise ValueError("Run kataliarc update to install the unified Walton rubric.")
+                prior_evaluation = load_json(DATA / "evaluation.json")
+                if stage == "evaluate" and not load_json(DATA / "tactics.json").get("alternatives"):
+                    raise ValueError("Record at least one architectural alternative before evaluating.")
+                if stage in {"review", "decide"}:
+                    errors = validate_evaluation(prior_evaluation, *_evaluation_inputs())
+                    if errors or not prior_evaluation.get("alternative_results"):
+                        raise ValueError("\n".join(errors) or "Run kataliarc walton evaluate before review or decide.")
+                if stage == "decide":
+                    decision_before = {name: (DATA / name).read_bytes() for name in ("decision.json", "decision.md")}
+            except (OSError, ValueError) as exc:
+                print(f"Walton evaluation validation failed: {exc}", file=sys.stderr)
+                return 1
+
+        result = run_phase(stage, prompt)
         if result.error:
             print(result.error, file=sys.stderr)
-        if result.returncode == 0 and stage in {"evaluate", "review", "decide"}:
+        if result.returncode != 0 and stage in {"evaluate", "review"}:
+            _save_evaluation(prior_evaluation)
+        if stage == "decide":
             try:
-                context = load_json(DATA / "context.json")
-                tactics = load_json(DATA / "tactics.json")
-                utility = load_json(DATA / "utility-tree.json")
+                unchanged = load_json(DATA / "evaluation.json") == prior_evaluation
+            except ValueError:
+                unchanged = False
+            if not unchanged:
+                _save_evaluation(prior_evaluation)
+                for name, content in decision_before.items():
+                    (DATA / name).write_bytes(content)
+                print("Walton decide modified evaluation.json. The validated evaluation has been restored.", file=sys.stderr)
+                return 1
+            if result.returncode == 0:
+                try:
+                    selected = load_json(DATA / "decision.json").get("selected_alternative_id")
+                    previous_selection = json.loads(decision_before["decision.json"]).get("selected_alternative_id")
+                    retained = {row["alternative_id"] for row in prior_evaluation["alternative_results"] if row["action"] == "MANTENER"}
+                    if selected is not None and (
+                        not isinstance(selected, str) or selected not in retained
+                        or (len(retained) > 1 and selected != previous_selection)
+                    ):
+                        raise ValueError("Describe eligible alternatives and leave an unconfirmed selection to the authorized decision maker.")
+                except (OSError, ValueError) as exc:
+                    for name, content in decision_before.items():
+                        (DATA / name).write_bytes(content)
+                    print(f"Walton recommendation validation failed: {exc}", file=sys.stderr)
+                    return 1
+        if result.returncode == 0 and stage in {"evaluate", "review"}:
+            try:
                 evaluation = load_json(DATA / "evaluation.json")
-                if evaluation.get("assessments") or tactics.get("alternatives"):
-                    errors = validate_evaluation(evaluation, context, tactics, utility)
-                    if errors:
-                        print("Walton evaluation validation failed: " + "; ".join(errors), file=sys.stderr)
-                        return 1
-            except (OSError, ValueError, json.JSONDecodeError) as exc:
-                print(f"Could not validate Walton evaluation: {exc}", file=sys.stderr)
+                if isinstance(evaluation, dict) and isinstance(prior_evaluation, dict):
+                    _retain_evaluation_history(evaluation, prior_evaluation)
+                    if prior_evaluation.get("assessments") and evaluation.get("assessments") != prior_evaluation["assessments"]:
+                        history = evaluation.setdefault("assessment_history", [])
+                        if isinstance(history, list):
+                            snapshot = {key: prior_evaluation[key] for key in ("rubric_version", "iteration", "assessments", "alternative_results") if key in prior_evaluation}
+                            if snapshot not in history:
+                                history.append(snapshot)
+                _publish_evaluation(evaluation)
+            except (OSError, ValueError) as exc:
+                _save_evaluation(prior_evaluation)
+                print(f"Walton evaluation validation failed: {exc}", file=sys.stderr)
                 return 1
         if result.returncode == 0 and stage == "evaluate":
             try:
@@ -461,7 +576,7 @@ def run_stage(stage: str, with_agent: bool, *, repository: Path | None = None, r
                     "Revise candidate tactics, combinations or Toulmin arguments in tactics.json and alternatives.md. "
                     "Do not edit evaluation.json, claim validation, inspect external repositories, or accept an ADR."
                 )
-                refined = provider.run(agent, refinement_prompt, ROOT)
+                refined = run_phase("design", refinement_prompt)
                 if refined.returncode != 0:
                     print(refined.error or "Toulmin refinement failed.", file=sys.stderr)
                     for request in requests:
@@ -476,22 +591,27 @@ def run_stage(stage: str, with_agent: bool, *, repository: Path | None = None, r
                 evaluation["iteration_requests"] = requests
                 evaluation.setdefault("iteration_history", []).append({"iteration": iteration, "action": "toulmin_refinement", "observation": "Toulmin revised requested artifacts; Walton reevaluation follows.", "source_artifacts": ["tactics.json", "alternatives.md"], "outcome": "REFINED", "previous_assessments": previous_assessments})
                 evaluation["iteration"] = iteration
-                evaluation.setdefault("assessment_history", []).append({"iteration": iteration - 1, "assessments": previous_assessments})
+                evaluation.setdefault("assessment_history", []).append({"iteration": iteration - 1, "assessments": previous_assessments, "alternative_results": evaluation["alternative_results"]})
                 (DATA / "evaluation.json").write_text(json.dumps(evaluation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-                prior_iteration_history = list(evaluation.get("iteration_history", []))
-                prior_assessment_history = list(evaluation.get("assessment_history", []))
-                reevaluate = provider.run(agent, prompts["evaluate"], ROOT)
+                targets = sorted({target for request in requests for target in request["target_alternative_ids"]})
+                reevaluate = run_phase("evaluate", prompts["evaluate"] + "\nReassess the changed alternatives and dependent judgments: " + json.dumps(targets) + ". Preserve unaffected assessments.")
                 if reevaluate.returncode != 0:
+                    for request in requests:
+                        request["status"] = "UNRESOLVED"
+                    _save_evaluation(evaluation)
                     print(reevaluate.error or "Walton reevaluation failed.", file=sys.stderr)
                     return reevaluate.returncode
-                current = load_json(DATA / "evaluation.json")
-                current["iteration_history"] = prior_iteration_history + [entry for entry in current.get("iteration_history", []) if entry not in prior_iteration_history]
-                current["assessment_history"] = prior_assessment_history + [entry for entry in current.get("assessment_history", []) if entry not in prior_assessment_history]
-                current["iteration"] = iteration
-                (DATA / "evaluation.json").write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-                errors = validate_evaluation(current, load_json(DATA / "context.json"), load_json(DATA / "tactics.json"), load_json(DATA / "utility-tree.json"))
-                if errors:
-                    print("Walton reevaluation validation failed: " + "; ".join(errors), file=sys.stderr)
+                try:
+                    current = load_json(DATA / "evaluation.json")
+                    if isinstance(current, dict):
+                        _retain_evaluation_history(current, evaluation)
+                        current["iteration"] = iteration
+                    _publish_evaluation(current)
+                except (OSError, ValueError) as exc:
+                    for request in requests:
+                        request["status"] = "UNRESOLVED"
+                    _save_evaluation(evaluation)
+                    print(f"Walton reevaluation validation failed: {exc}", file=sys.stderr)
                     return 1
             final_evaluation = load_json(DATA / "evaluation.json")
             pending = [request for request in final_evaluation.get("iteration_requests", []) if isinstance(request, dict) and request.get("status", "PENDING") == "PENDING"]
@@ -585,7 +705,7 @@ def rag_test(query: str, max_results: int = 3) -> int:
     return 0
 
 
-def _adr_actor(value: str | None) -> str:
+def _adr_actor(value: Optional[str]) -> str:
     return value.strip() if value and value.strip() else getpass.getuser()
 
 
@@ -645,7 +765,7 @@ def _index_accepted_adr(adr_id: str) -> int:
         return 1
 
 
-def _queue_adr_indexing(adr_id: str, *, supersedes: str | None = None) -> int:
+def _queue_adr_indexing(adr_id: str, *, supersedes: Optional[str] = None) -> int:
     """Launch a detached worker and return without waiting for remote vectorization."""
     try:
         record = load_adr(DATA, adr_id)
@@ -699,7 +819,7 @@ def _supersede_remote(adr_id: str) -> None:
         print(f"Warning: {adr_id} is SUPERSEDED locally, but remote retrieval metadata could not be updated.", file=sys.stderr)
 
 
-def decide_action(*, show: str | None = None, accept: str | None = None, reject: str | None = None, request_changes: str | None = None, history: str | None = None, retry_index: str | None = None, actor: str | None = None, note: str = "", supersedes: str | None = None) -> int:
+def decide_action(*, show: Optional[str] = None, accept: Optional[str] = None, reject: Optional[str] = None, request_changes: Optional[str] = None, history: Optional[str] = None, retry_index: Optional[str] = None, actor: Optional[str] = None, note: str = "", supersedes: Optional[str] = None) -> int:
     selected = [("show", show), ("accept", accept), ("reject", reject), ("request changes", request_changes), ("history", history), ("retry index", retry_index)]
     actions = [(name, value) for name, value in selected if value]
     if len(actions) != 1:
@@ -753,7 +873,7 @@ def build_public_help_parser() -> argparse.ArgumentParser:
     )
     commands = parser.add_subparsers(dest="command")
     help_rows = (
-        ("init", "Inicializa artefactos y skills del proyecto"),
+        ("init", "Inicializa artefactos e integración del proyecto"),
         ("help", "Muestra los comandos disponibles"),
         ("pohl elicit", "Recoge contexto y escenarios"),
         ("pohl prioritize", "Organiza prioridades confirmadas"),
@@ -782,7 +902,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--supersede-adr-worker", metavar="ADR_ID", help=argparse.SUPPRESS)
     parser.add_argument("--init", "-init", dest="command", action="store_const", const="init", help="Inicia el asistente de configuración")
     subs = parser.add_subparsers(dest="command")
-    p = subs.add_parser("init", help="Inicializa artefactos y skills del proyecto")
+    p = subs.add_parser("init", help="Inicializa artefactos e integración del proyecto")
     p.add_argument("--agent", choices=["codex", "claude", "gemini", "copilot"])
     p.add_argument("--directory", type=Path, help="Directorio del proyecto (predeterminado: directorio actual)")
     p.add_argument("--no-banner", action="store_true", help="No mostrar el banner")
@@ -790,7 +910,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--language", choices=["es", "en"], help="Idioma de los artefactos iniciales")
     p.add_argument("--no-music", action="store_true", help="Silencia la melodía retro durante el inicio")
     p.add_argument("--rag-vector-store-id", help="ID of an existing OpenAI vector store for Toulmin retrieval")
-    p.add_argument("--global", action="store_true", dest="global_scope", help="Instala skills e instrucciones en el directorio de usuario")
+    p.add_argument("--global", action="store_true", dest="global_scope", help="Instala la integración en el directorio de usuario")
     subs.add_parser("validate", help="Valida JSON y trazabilidad entre artefactos")
     subs.add_parser("status", help="Muestra artefactos y prioridades pendientes")
     rag_parser = subs.add_parser("rag-test", help="Checks one read-only query against the configured ADR vector store")
@@ -823,6 +943,8 @@ def build_parser() -> argparse.ArgumentParser:
             if action == "design":
                 action_parser.add_argument("--repo", type=Path, help="Target repository for read-only analysis (default: current directory)")
                 action_parser.add_argument("--no-rag", action="store_true", help="Run Toulmin without searching the vector store")
+            if action == "evaluate":
+                action_parser.add_argument("--finalize", action="store_true", help="Valida las valoraciones y calcula las acciones sin invocar un agente")
     help_parser = subs.add_parser("help", help="Muestra los comandos disponibles")
     help_parser.add_argument("topic", nargs="?", help="Comando del que se quiere ver la ayuda detallada")
     return parser
@@ -866,7 +988,10 @@ def main() -> None:
             result = decide_action(show=args.show, accept=args.accept, reject=args.reject, request_changes=args.request_changes, history=args.history, retry_index=args.retry_index, actor=args.approver, note=args.note, supersedes=args.supersedes)
         elif args.command in ROLE_ACTIONS:
             stage = args.role_action
-            result = run_stage(stage, True, repository=getattr(args, "repo", None), rag_enabled=not getattr(args, "no_rag", False))
+            if getattr(args, "finalize", False):
+                result = _finalize_walton_evaluation()
+            else:
+                result = run_stage(stage, True, repository=getattr(args, "repo", None), rag_enabled=not getattr(args, "no_rag", False))
         else:
             result = 2
     raise SystemExit(result)

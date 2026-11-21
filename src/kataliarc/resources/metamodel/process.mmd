@@ -31,28 +31,29 @@ flowchart TB
   end
 
   subgraph WaltonEvaluation[Walton — evaluate, critically review, and recommend]
-    K1[M1: Assess every alternative against every in-scope scenario]
-    K1 --> K2[M3: Classify direction and sufficiency; separate contribution from compliance]
-    K2 --> K3[M4: Record causal rationale, assumptions, and evidence]
-    K3 --> K31[M2: Identify supported risks, sensitivity points, and cross-scenario trade-offs]
+    K1[Assess each complete alternative with C1–C6 per scenario]
+    K1 --> K2[Record evidence, assumptions and qualitative judgments]
+    K2 --> K3[Validate evidence references and scope]
+    K3 --> K31[Record supported risks, no risks, sensitivity and trade-offs]
     K31 --> W1
-    W2 --> W4
     W4 --> K32[Revise challenged assessments and preserve prior versions]
-    K32 --> K4{Further review or validation needed?}
-    K4 -- Yes: design issue --> T2
-    K4 -- Yes: scenario or context changed --> P1
-    K4 -- Yes: evaluation issue --> K1
-    K4 -- No --> K5[Recommend best-supported alternative or keep outcome provisional/undetermined]
+    K32 --> Rule{Calculate action with R1–R4}
+    Rule -- MODIFICAR --> Bound{Refinement budget remains?}
+    Bound -- Yes --> T2
+    Bound -- No --> K5
+    Rule -- POSPONER: record missing facts --> K5
+    Rule -- DESCARTAR: record confirmed impediment --> K5
+    Rule -- MANTENER: retain for comparison --> K5[Compare retained candidates and explain all outcomes]
     K5 --> K6[Record rationale, limits, open questions, and decision status]
     K6 --> K7[Persist ADR proposal as PROPOSED]
     K7 --> U1
   end
 
   subgraph WaltonReview[Walton — critical review]
-    W1[M5: Apply Walton questions to practical, causal, analogy, expert, and consequence claims]
+    W1[Apply Walton questions to practical, causal, analogy, expert, and consequence claims]
     W1 --> W3[Record answers, claim references, evidence, objections, and outcomes]
-    W3 --> W2
-    W4[Walton assembles and persists an ADR proposal as PROPOSED with version and source trace]
+    W3 --> W4
+    W4[Record the critical review and remaining objections]
   end
 
   subgraph UserApproval[User / authorized decision maker]

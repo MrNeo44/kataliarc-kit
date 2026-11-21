@@ -1,151 +1,309 @@
+from copy import deepcopy
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
 from kataliarc import cli
-from kataliarc.evaluation import RUBRIC_VERSION, classify_contribution, validate_evaluation, validate_rubric
+from kataliarc.evaluation import (
+    CRITERIA,
+    decide_alternative,
+    finalize_evaluation,
+    prepare_refinements,
+    validate_evaluation,
+    validate_rubric,
+)
 
 
-@pytest.mark.parametrize(("direction", "sufficiency", "label"), [
-    ("POSITIVE", "SUFFICIENT", "MAKE (++)"), ("POSITIVE", "INSUFFICIENT", "HELP (+)"),
-    ("POSITIVE", "UNKNOWN", "SomePositive"), ("NEGATIVE", "INSUFFICIENT", "HURT (-)"),
-    ("NEGATIVE", "SUFFICIENT", "BREAK (--)"), ("NEGATIVE", "UNKNOWN", "SomeNegative"),
-    ("UNKNOWN", "UNKNOWN", "UNKNOWN (?)"),
+ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture
+def example():
+    return json.loads((ROOT / "examples/walton-combination.json").read_text(encoding="utf-8"))
+
+
+def inputs(example):
+    return example["context"], example["tactics"], example["utility_tree"]
+
+
+@pytest.mark.parametrize(("changed", "expected"), [
+    ({}, ("MANTENER", "R4")),
+    ({"C3": "REQUIERE_AJUSTE"}, ("MODIFICAR", "R3")),
+    ({"C6": "INCIERTO"}, ("POSPONER", "R2")),
+    ({"C1": "NO_CUMPLE"}, ("DESCARTAR", "R1")),
+    ({"C1": "INCIERTO", "C6": "NO_CUMPLE"}, ("DESCARTAR", "R1")),
+    ({"C1": "REQUIERE_AJUSTE", "C6": "INCIERTO"}, ("POSPONER", "R2")),
 ])
-def test_deterministic_contribution_labels(direction, sufficiency, label):
-    assert classify_contribution(direction, sufficiency) == label
+def test_deterministic_priority(changed, expected):
+    values = dict.fromkeys(CRITERIA, "CUMPLE") | changed
+    assert decide_alternative(values) == decide_alternative(dict(reversed(list(values.items())))) == expected
 
 
-def test_neutral_requires_unknown_sufficiency_and_justification():
-    with pytest.raises(ValueError):
-        classify_contribution("NEUTRAL", "UNKNOWN")
-    assert classify_contribution("NEUTRAL", "UNKNOWN", neutral_justified=True) == "NEUTRAL (0)"
+def test_engine_rejects_incomplete_or_unrecognized_judgments():
+    values = dict.fromkeys(CRITERIA, "CUMPLE")
+    with pytest.raises(ValueError, match="exactly"):
+        decide_alternative({"C1": "CUMPLE"})
+    with pytest.raises(ValueError, match="Invalid"):
+        decide_alternative(values | {"C3": "MAYBE"})
+    with pytest.raises(ValueError, match="Invalid"):
+        decide_alternative(values | {"C3": 9})
 
 
-def _assessment(alt, scenario, *, direction="POSITIVE", sufficiency="INSUFFICIENT", label="HELP (+)", compliance="UNVERIFIED", evidence=None):
-    return {
-        "alternative_id": alt, "scenario_id": scenario, "tactic_ids": ["T1"], "design_decision": "Use a bounded cache",
-        "direction": {"POSITIVE": "favorable", "NEGATIVE": "desfavorable", "NEUTRAL": "condicionado", "UNKNOWN": "indeterminado"}[direction],
-        "rationale": "The cache reduces repeated storage reads under the stated workload.",
-        "contribution_direction": direction, "sufficiency": sufficiency, "contribution_label": label,
-        "neutral_justified": direction == "NEUTRAL", "evidence_status": "documentada" if evidence else "inferencia/hipótesis",
-        "compliance_status": compliance,
-        "causal_justification": {"claim": "Caching reduces repeated reads.", "mechanism": "Repeated reads use in-memory data.", "evidence": evidence or [], "assumptions": ["Working set fits memory"], "applicability_conditions": ["Cache is enabled"], "expected_effect": "Lower read latency", "sufficiency_rationale": "The target still depends on workload and cache hit ratio.", "counterarguments": ["Cache misses still reach storage"], "conclusion": "Positive but insufficient contribution."},
-        "assumptions": ["Working set fits memory"], "objections": [], "critical_question_assessments": [], "rubric_version": RUBRIC_VERSION,
+def test_schema_and_example_agree_with_the_rules(example):
+    rubric = json.loads((ROOT / "src/kataliarc/resources/metamodel/walton-rubric.json").read_text())
+    assert validate_rubric(rubric) == []
+    rubric["decision_rules"].reverse()
+    assert validate_rubric(rubric)
+    evaluation = example["evaluation"]
+    assert validate_evaluation(evaluation, *inputs(example)) == []
+    assert finalize_evaluation(evaluation, *inputs(example)) == evaluation
+    assert evaluation["alternative_results"][0]["action"] == "MODIFICAR"
+
+
+def test_forged_action_cannot_override_engine(example):
+    evaluation = example["evaluation"]
+    evaluation["alternative_results"] = [{"action": "MANTENER"}]
+    assert validate_evaluation(evaluation, *inputs(example))
+    derived = finalize_evaluation(evaluation, *inputs(example))
+    assert derived["alternative_results"][0]["action"] == "MODIFICAR"
+
+
+@pytest.mark.parametrize(("value", "required"), [
+    ("REQUIERE_AJUSTE", "adjustment"),
+    ("NO_CUMPLE", "impediment"),
+    ("INCIERTO", "pending_information"),
+])
+def test_criterion_requires_specific_support(example, value, required):
+    assessment = example["evaluation"]["assessments"][0]
+    assessment["criteria"]["C1"]["value"] = value
+    errors = validate_evaluation(example["evaluation"], *inputs(example))
+    assert any(required in error for error in errors)
+
+
+def test_no_cumple_requires_direct_evidence(example):
+    judgment = example["evaluation"]["assessments"][0]["criteria"]["C1"]
+    judgment.update(value="NO_CUMPLE", impediment="A documented mandatory condition prevents deployment.",
+                    impediment_ref={"scenario_id": "QS-01"})
+    judgment["evidence_refs"] = [{"kind": "ANALOGIA", "reference": "ADR-001"}]
+    with pytest.raises(ValueError, match="evidence_refs"):
+        finalize_evaluation(example["evaluation"], *inputs(example))
+
+
+@pytest.mark.parametrize(("reference", "valid"), [
+    ({"scenario_id": "QS-01"}, True),
+    ({"scenario_id": "QS-02"}, False),
+    ({"constraint_id": "CON-1"}, True),
+    ({"constraint_id": "CON-2"}, False),
+    ({"constraint_id": "missing"}, False),
+])
+def test_confirmed_blocker_must_reference_the_assessed_scenario_or_mandatory_constraint(example, reference, valid):
+    example["context"]["constraints"] = [
+        {"id": "CON-1", "mandatory": True}, {"id": "CON-2", "mandatory": False},
+    ]
+    draft = example["evaluation"]
+    judgment = draft["assessments"][0]["criteria"]["C1"]
+    judgment.update(value="NO_CUMPLE", impediment="A confirmed contradiction prevents deployment.",
+                    impediment_ref=reference, evidence_refs=[{"kind": "DIRECTA", "reference": "EV-CONTRADICTION"}])
+    if valid:
+        assert finalize_evaluation(draft, *inputs(example))["alternative_results"][0]["action"] == "DESCARTAR"
+    else:
+        with pytest.raises(ValueError, match="impediment_ref"):
+            finalize_evaluation(draft, *inputs(example))
+
+
+def test_atam_risk_alone_does_not_discard_an_alternative(example):
+    draft = example["evaluation"]
+    assert draft["risks"]
+    assert finalize_evaluation(draft, *inputs(example))["alternative_results"][0]["action"] == "MODIFICAR"
+    draft["assessments"][0]["criteria"]["C4"]["value"] = "CUMPLE"
+    assert finalize_evaluation(draft, *inputs(example))["alternative_results"][0]["action"] == "MANTENER"
+
+
+def test_unresolved_objection_postpones_instead_of_refuting(example):
+    draft = example["evaluation"]
+    row = draft["assessments"][0]
+    row["critical_question_assessments"][0]["result"] = "unresolved"
+    row["criteria"]["C6"].update(value="INCIERTO", pending_information=["Resolve the cold-rollout analogy with a load test."])
+    result = finalize_evaluation(draft, *inputs(example))["alternative_results"][0]
+    assert (result["action"], result["rule"]) == ("POSPONER", "R2")
+    row["criteria"]["C6"]["value"] = "NO_CUMPLE"
+    with pytest.raises(ValueError, match="impediment"):
+        finalize_evaluation(draft, *inputs(example))
+
+
+def test_assessments_cover_affected_scenarios_and_combination_membership(example):
+    evaluation = example["evaluation"]
+    example["context"]["quality_scenarios"][1]["priority"] = "pendiente"
+    example["context"]["quality_scenarios"][1]["mandatory"] = False
+    example["utility_tree"]["quality_attributes"].pop()
+    evaluation["assessments"].pop()
+    errors = validate_evaluation(evaluation, *inputs(example))
+    assert any("missing alternative/scenario coverage: ALT-003/QS-02" in error for error in errors)
+    evaluation["assessments"][0]["tactic_ids"] = ["T-SCALE"]
+    assert any("full set of tactics" in error for error in validate_evaluation(evaluation, *inputs(example)))
+
+
+def test_combination_is_independent_from_its_components(example):
+    evaluation = example["evaluation"]
+    for alternative, member in (("ALT-001", "T-SCALE"), ("ALT-002", "T-CACHE")):
+        example["tactics"]["alternatives"].append({"id": alternative, "tactic_ids": [member]})
+        for source in evaluation["assessments"][:2]:
+            row = deepcopy(source)
+            row.update(alternative_id=alternative, tactic_ids=[member])
+            row["criteria"]["C4"].update(value="INCIERTO", pending_information=["Measure the component independently."])
+            evaluation["assessments"].append(row)
+    results = finalize_evaluation(evaluation, *inputs(example))["alternative_results"]
+    assert {item["alternative_id"]: item["action"] for item in results} == {
+        "ALT-001": "POSPONER", "ALT-002": "POSPONER", "ALT-003": "MODIFICAR",
     }
 
 
-def _evaluation():
-    context = {"quality_scenarios": [{"id": "QS1", "quality_attribute": "performance"}, {"id": "QS2", "quality_attribute": "availability"}]}
-    tactics = {"alternatives": [{"id": "A1"}, {"id": "A2"}]}
-    utility = {"quality_attributes": [{"name": "performance", "scenario_ids": ["QS1"]}, {"name": "availability", "scenario_ids": ["QS2"]}]}
-    assessments = [_assessment(alt, scenario) for alt in ("A1", "A2") for scenario in ("QS1", "QS2")]
-    evaluation = {"rubric_version": RUBRIC_VERSION, "assessments": assessments, "risks": [], "sensitivity_points": [], "tradeoffs": [], "iteration": 0, "iteration_requests": [], "iteration_history": []}
-    return evaluation, context, tactics, utility
+def test_findings_and_walton_objections_are_validated(example):
+    evaluation = example["evaluation"]
+    evaluation["tradeoffs"][0]["affected_scenario_ids"] = ["QS-01", "missing"]
+    assert any("ALT-003/missing" in error for error in validate_evaluation(evaluation, *inputs(example)))
+    examination = evaluation["assessments"][0]["critical_question_assessments"][0]
+    examination["objection"] = None
+    assert any("objection" in error for error in validate_evaluation(evaluation, *inputs(example)))
 
 
-def test_complete_pairwise_coverage_and_label_contract():
-    evaluation, context, tactics, utility = _evaluation()
-    assert validate_evaluation(evaluation, context, tactics, utility) == []
-    evaluation["assessments"].pop()
-    assert any("missing alternative/scenario coverage" in error for error in validate_evaluation(evaluation, context, tactics, utility))
+def test_only_modifications_get_pending_refinements(example):
+    assessment = example["evaluation"]["assessments"][0]
+    assessment["criteria"]["C2"].update(value="INCIERTO", pending_information=["Measure the version service load."])
+    result = finalize_evaluation(example["evaluation"], *inputs(example))
+    prepare_refinements(result)
+    assert result["alternative_results"][0]["action"] == "POSPONER"
+    assert result["iteration_requests"][0]["status"] == "UNRESOLVED"
 
 
-def test_direction_sufficiency_mapping_is_enforced():
-    evaluation, context, tactics, utility = _evaluation()
-    evaluation["assessments"][0]["contribution_label"] = "MAKE (++)"
-    assert any("conflicts with deterministic classification" in error for error in validate_evaluation(evaluation, context, tactics, utility))
+def _write(path, obj):
+    path.write_text(json.dumps(obj, ensure_ascii=False), encoding="utf-8")
 
 
-def test_contribution_is_separate_from_empirical_compliance():
-    evaluation, context, tactics, utility = _evaluation()
-    assessment = evaluation["assessments"][0]
-    assert assessment["contribution_label"] == "HELP (+)"
-    assert assessment["compliance_status"] == "UNVERIFIED"
-    assessment["compliance_status"] = "VERIFIED_SATISFIED"
-    assert any("verified compliance requires explicit evidence" in error for error in validate_evaluation(evaluation, context, tactics, utility))
-
-
-def test_causal_justification_and_rubric_are_checked():
-    evaluation, context, tactics, utility = _evaluation()
-    evaluation["assessments"][0]["causal_justification"]["mechanism"] = ""
-    assert any("causal_justification.mechanism must not be empty" in error for error in validate_evaluation(evaluation, context, tactics, utility))
-    rubric = json.loads((Path(__file__).parents[1] / "src/kataliarc/resources/metamodel/walton-rubric.json").read_text())
-    assert validate_rubric(rubric) == []
-
-
-def test_risk_sensitivity_tradeoff_findings_need_traceable_fields():
-    evaluation, context, tactics, utility = _evaluation()
-    evaluation["risks"] = [{"id": "R1", "decision_id": "A1", "scenario_ids": ["QS1"], "causal_mechanism": "Cache stampede", "consequence": "Latency spike", "evidence": [], "status": "HYPOTHETICAL", "mitigation": "Jitter"}]
-    evaluation["sensitivity_points"] = [{"id": "S1", "property": "TTL", "scenario_id": "QS1", "response_measure": {"metric": "p95", "operator": "<=", "value": 300, "unit": "ms"}, "causal_mechanism": "Eviction changes hit rate", "variation_effect": "Higher TTL may improve hit ratio", "status": "CANDIDATE", "evidence": []}]
-    evaluation["tradeoffs"] = [{"id": "TO1", "decision_id": "A1", "property": "cache consistency", "affected_scenario_ids": ["QS1", "QS2"], "positive_effects": ["Lower latency"], "negative_effects": ["Stale reads"], "shared_mechanism": "Cache invalidation lag", "business_priorities": ["Performance"], "assumptions": [], "evidence": [], "mitigations": ["Short TTL"]}]
-    assert validate_evaluation(evaluation, context, tactics, utility) == []
-    evaluation["tradeoffs"][0]["affected_scenario_ids"] = ["missing"]
-    assert any("references unknown scenario" in error for error in validate_evaluation(evaluation, context, tactics, utility))
-
-
-def test_neutral_requires_explanation_and_unjustified_neutral_fails():
-    evaluation, context, tactics, utility = _evaluation()
-    item = evaluation["assessments"][0]
-    item.update({"direction": "condicionado", "contribution_direction": "NEUTRAL", "sufficiency": "UNKNOWN", "contribution_label": "NEUTRAL (0)", "neutral_justified": False})
-    assert any("explicit justification" in error for error in validate_evaluation(evaluation, context, tactics, utility))
-
-
-def test_walton_question_schema_is_explicit():
-    evaluation, context, tactics, utility = _evaluation()
-    evaluation["assessments"][0]["critical_question_assessments"] = [{"scheme": "causal_argument", "question": "Is the relation supported?", "claim_ref": "A1/QS1", "answer": "Not by a measured test.", "result": "unresolved", "evidence_refs": [], "objection": "No benchmark"}]
-    assert validate_evaluation(evaluation, context, tactics, utility) == []
-    evaluation["assessments"][0]["critical_question_assessments"][0]["scheme"] = "generic"
-    assert any("invalid scheme" in error for error in validate_evaluation(evaluation, context, tactics, utility))
-
-
-def test_iteration_requests_are_bounded_and_references_are_valid():
-    evaluation, context, tactics, utility = _evaluation()
-    evaluation["iteration_requests"] = [{"request_type": "new_tactic", "reason": "Recovery is not covered", "target_scenario_ids": ["QS2"], "target_alternative_ids": ["A1"], "request_for_toulmin": "Propose a recovery mechanism", "status": "PENDING"}]
-    assert validate_evaluation(evaluation, context, tactics, utility) == []
-    evaluation["iteration_requests"][0]["target_scenario_ids"] = ["absent"]
-    assert any("invalid target_scenario_ids" in error for error in validate_evaluation(evaluation, context, tactics, utility))
-
-
-def test_evaluate_runs_bounded_toulmin_refinement_and_reevaluation(tmp_path, monkeypatch):
+def _initialize(tmp_path, monkeypatch, example):
     monkeypatch.chdir(tmp_path)
     assert cli.init("codex") == 0
     root = tmp_path / ".kataliarc"
-    context = {"business_goals": [], "business_requirements": [], "constraints": [], "quality_attributes": [], "quality_scenarios": [{"id": "QS1", "description": "P95 latency under 300 ms", "quality_attribute": "performance", "priority": "A", "mandatory": False}], "references": []}
-    (root / "context.json").write_text(json.dumps(context), encoding="utf-8")
-    (root / "utility-tree.json").write_text(json.dumps({"quality_attributes": [{"name": "performance", "scenario_ids": ["QS1"]}]}), encoding="utf-8")
-    tactics = {"scenario_arguments": [], "tactics": [{"id": "T1", "name": "Cache"}], "pattern_tactic_interactions": [], "tactic_interactions": [], "alternatives": [{"id": "A1", "description": "Cache reads"}]}
-    (root / "tactics.json").write_text(json.dumps(tactics), encoding="utf-8")
-    config = json.loads((root / "config.json").read_text())
-    config["language"] = "en"
-    config["walton"] = {"max_iterations": 1}
-    (root / "config.json").write_text(json.dumps(config), encoding="utf-8")
-    initial, _, _, _ = _evaluation()
-    initial["assessments"] = [_assessment("A1", "QS1")]
-    initial["iteration_requests"] = [{"request_type": "new_tactic", "reason": "Recovery mechanism unclear", "target_scenario_ids": ["QS1"], "target_alternative_ids": ["A1"], "request_for_toulmin": "Clarify recovery"}]
-    calls = []
+    for filename, data in zip(("context.json", "tactics.json", "utility-tree.json"), inputs(example)):
+        _write(root / filename, data)
+    _write(root / "evaluation.json", example["evaluation"])
+    return root
 
-    class Result:
-        returncode = 0
-        error = None
+
+def test_finalize_cli_runs_without_provider_and_records_markdown(tmp_path, monkeypatch, example):
+    root = _initialize(tmp_path, monkeypatch, example)
+    draft = example["evaluation"]
+    draft.pop("alternative_results")
+    _write(root / "evaluation.json", draft)
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join(filter(None, (str(ROOT / "src"), os.environ.get("PYTHONPATH"))))}
+    result = subprocess.run([sys.executable, "-m", "kataliarc.cli", "walton", "evaluate", "--finalize"], env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert "ALT-003 MODIFICAR (R3)" in result.stdout
+    assert "**MODIFICAR** (R3)" in (root / "evaluation.md").read_text()
+    output = json.loads((root / "evaluation.json").read_text())
+    assert output["alternative_results"][0]["action"] == "MODIFICAR"
+    result = subprocess.run([sys.executable, "-m", "kataliarc.cli", "validate"], env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+def test_evaluate_runs_bounded_toulmin_refinement_and_reevaluation(tmp_path, monkeypatch, example):
+    root = _initialize(tmp_path, monkeypatch, example)
+    config = json.loads((root / "config.json").read_text())
+    config["walton"] = {"max_iterations": 1}
+    _write(root / "config.json", config)
+    calls = []
 
     class Provider:
         def run(self, agent, prompt, cwd):
             calls.append(prompt)
             if len(calls) == 1:
-                (root / "evaluation.json").write_text(json.dumps(initial), encoding="utf-8")
-            elif len(calls) == 3:
+                draft = deepcopy(example["evaluation"])
+                draft["alternative_results"][0]["action"] = "DESCARTAR"
+                _write(root / "evaluation.json", draft)
+            if len(calls) == 3:
                 revised = json.loads((root / "evaluation.json").read_text())
-                revised["iteration_requests"] = []
-                (root / "evaluation.json").write_text(json.dumps(revised), encoding="utf-8")
-            return Result()
+                revised["assessments"][0]["criteria"]["C4"].update(value="CUMPLE", justification="The recorded rollout check now supports sufficiency.")
+                _write(root / "evaluation.json", revised)
+            return cli.AgentResult(0)
 
     monkeypatch.setattr(cli, "AgentProvider", Provider)
     assert cli.run_stage("evaluate", True) == 0
     assert len(calls) == 3
+    assert calls[0].startswith("Delegate the phase below to the `walton` subagent")
+    assert calls[1].startswith("Delegate the phase below to the `toulmin` subagent")
     assert "Walton requested a bounded refinement" in calls[1]
+    assert "Preserve unaffected assessments." in calls[2]
     final = json.loads((root / "evaluation.json").read_text())
     assert final["iteration"] == 1
-    assert any(item["action"] == "toulmin_refinement" for item in final["iteration_history"])
+    assert final["alternative_results"][0]["action"] == "MANTENER"
+    assert final["assessment_history"][0]["alternative_results"][0]["action"] == "MODIFICAR"
 
+
+def test_decide_restores_computed_outcomes_if_provider_edits_evaluation(tmp_path, monkeypatch, example):
+    root = _initialize(tmp_path, monkeypatch, example)
+
+    class Provider:
+        def run(self, agent, prompt, cwd):
+            overwritten = deepcopy(example["evaluation"])
+            overwritten["alternative_results"][0]["action"] = "MANTENER"
+            _write(root / "evaluation.json", overwritten)
+            return cli.AgentResult(0)
+
+    monkeypatch.setattr(cli, "AgentProvider", Provider)
+    assert cli.run_stage("decide", True) == 1
+    assert json.loads((root / "evaluation.json").read_text()) == example["evaluation"]
+
+
+def test_decide_leaves_a_modifiable_alternative_unselected(tmp_path, monkeypatch, example):
+    root = _initialize(tmp_path, monkeypatch, example)
+
+    class Provider:
+        def run(self, agent, prompt, cwd):
+            _write(root / "decision.json", {"selected_alternative_id": "ALT-003"})
+            return cli.AgentResult(0)
+
+    monkeypatch.setattr(cli, "AgentProvider", Provider)
+    assert cli.run_stage("decide", True) == 1
+    assert json.loads((root / "decision.json").read_text())["selected_alternative_id"] is None
+
+
+def test_review_copies_calculated_results_and_evidence_into_proposed_adr(tmp_path, monkeypatch, example):
+    root = _initialize(tmp_path, monkeypatch, example)
+
+    class Provider:
+        def run(self, agent, prompt, cwd):
+            _write(root / "review.json", example["review"])
+            return cli.AgentResult(0)
+
+    monkeypatch.setattr(cli, "AgentProvider", Provider)
+    assert cli.run_stage("review", True) == 0
+    adr = json.loads((root / "decisions/ADR-001.json").read_text())
+    sections = adr["current_version"]["sections"]
+    assert adr["status"] == "PROPOSED" and adr["indexing"]["status"] == "NOT_REQUESTED"
+    assert sections["alternative_results"] == example["evaluation"]["alternative_results"]
+    assert sections["risks_and_sensitivities"]["no_risks"][0]["id"] == "NR-01"
+    assert sections["qualitative_scenario_assessments"][0]["criteria"]["C2"]["evidence_refs"][-1]["adr_id"] == "ADR-007"
+    assert sections["pending_verification"]["rubric"][0]["criterion"] == "C4"
+
+
+def test_reevaluation_preserves_legacy_judgments_without_translating_them(tmp_path, monkeypatch, example):
+    root = _initialize(tmp_path, monkeypatch, example)
+    previous = {"rubric_version": "legacy", "assessments": [{"alternative_id": "ALT-003", "scenario_id": "QS-01", "judgment": "legacy judgment"}]}
+    _write(root / "evaluation.json", previous)
+    _write(root / "config.json", {"agent": "codex", "walton": {"max_iterations": 0}})
+
+    class Provider:
+        def run(self, agent, prompt, cwd):
+            _write(root / "evaluation.json", example["evaluation"])
+            return cli.AgentResult(0)
+
+    monkeypatch.setattr(cli, "AgentProvider", Provider)
+    assert cli.run_stage("evaluate", True) == 0
+    evaluation = json.loads((root / "evaluation.json").read_text())
+    assert evaluation["assessment_history"] == [previous]
+    assert evaluation["alternative_results"][0]["action"] == "MODIFICAR"
+    assert evaluation["iteration_requests"][0]["status"] == "UNRESOLVED"

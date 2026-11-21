@@ -1,6 +1,6 @@
 {
   "name": "KatalIArc domain metamodel",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "language": "en",
   "purpose": "Describe the domain concepts and relationships used to elicit, reason about, evaluate, review, and record software architecture decisions.",
   "modeling_guidance": [
@@ -8,7 +8,7 @@
     "A relationship's cardinality is stated only when known; do not infer one from an ambiguous drawing or absent data.",
     "Keep traceability between business goals, requirements, the architectural problem, quality scenarios, alternatives, assessments, and decisions.",
     "Record provenance and distinguish documented evidence, inference or hypothesis, and unknown information.",
-    "A contribution to a quality attribute is not proof of compliance. Record compliance status separately.",
+    "Distinguish qualitative criterion judgments from verified compliance with a scenario response measure.",
     "Do not infer client priorities. A stakeholder representative must confirm priority values."
   ],
   "enums": {
@@ -28,18 +28,6 @@
       "provisional",
       "indeterminado"
     ],
-    "assessment_direction": [
-      "favorable",
-      "condicionado",
-      "desfavorable",
-      "indeterminado"
-    ],
-    "compliance_status": [
-      "VERIFIED_SATISFIED",
-      "VERIFIED_UNSATISFIED",
-      "PREDICTED_UNDER_ASSUMPTIONS",
-      "UNVERIFIED"
-    ],
     "adr_status": [
       "PROPOSED",
       "UNDER_REVIEW",
@@ -54,26 +42,17 @@
       "INDEXED",
       "FAILED"
     ],
-    "contribution_direction": [
-      "POSITIVE",
-      "NEGATIVE",
-      "NEUTRAL",
-      "UNKNOWN"
+    "criterion_value": [
+      "CUMPLE",
+      "REQUIERE_AJUSTE",
+      "NO_CUMPLE",
+      "INCIERTO"
     ],
-    "contribution_sufficiency": [
-      "SUFFICIENT",
-      "INSUFFICIENT",
-      "UNKNOWN"
-    ],
-    "contribution_label": [
-      "MAKE (++)",
-      "HELP (+)",
-      "SomePositive",
-      "HURT (-)",
-      "BREAK (--)",
-      "SomeNegative",
-      "UNKNOWN (?)",
-      "NEUTRAL (0)"
+    "alternative_action": [
+      "MANTENER",
+      "MODIFICAR",
+      "DESCARTAR",
+      "POSPONER"
     ]
   },
   "entities": {
@@ -286,7 +265,8 @@
         "id": "string",
         "description": "string",
         "assembly_relations": "string[]",
-        "assumptions": "string[]"
+        "assumptions": "string[]",
+        "tactic_ids": "string[]"
       }
     },
     "ArchitecturalRisk": {
@@ -325,24 +305,13 @@
     },
     "ScenarioAssessment": {
       "diagram_name": "AlternativeAssessment",
-      "description": "Direct qualitative contribution assessment for one alternative and one ATAM quality scenario; one record per pair.",
+      "description": "Six traceable Walton judgments for one complete alternative and one quality scenario.",
       "attributes": {
         "alternative_id": "string",
         "scenario_id": "string",
-        "direction": "assessment_direction",
-        "rationale": "string",
-        "evidence_status": "evidence_status",
-        "compliance_status": "compliance_status",
         "tactic_ids": "string[]",
-        "design_decision": "string",
-        "contribution_direction": "POSITIVE | NEGATIVE | NEUTRAL | UNKNOWN",
-        "sufficiency": "SUFFICIENT | INSUFFICIENT | UNKNOWN",
-        "contribution_label": "MAKE (++) | HELP (+) | SomePositive | HURT (-) | BREAK (--) | SomeNegative | UNKNOWN (?) | NEUTRAL (0)",
-        "causal_justification": "object",
-        "assumptions": "string[]",
-        "objections": "object[]",
-        "critical_question_assessments": "CriticalQuestionAssessment[]",
-        "rubric_version": "string"
+        "criteria": "object keyed by C1 through C6 with criterion value, justification, evidence, and assumptions",
+        "critical_question_assessments": "CriticalQuestionAssessment[]"
       }
     },
     "DecisionRationale": {
@@ -403,14 +372,15 @@
         "toulmin_arguments": "ArchitecturalArgument[]",
         "qualitative_scenario_assessments": "ScenarioAssessment[]",
         "evaluation_method": "object",
-        "risks_and_sensitivities": "ArchitecturalRisk[]",
+        "risks_and_sensitivities": "object",
         "tradeoffs": "TradeOff[]",
         "walton_critical_questions": "object[]",
         "objections_and_counterarguments": "object[]",
         "evidence_and_references": "object",
         "assumptions_and_uncertainties": "string[]",
         "expected_consequences": "string[]",
-        "pending_verification": "string[]"
+        "pending_verification": "object",
+        "alternative_results": "AlternativeEvaluationResult[]"
       }
     },
     "ArchitecturalArgument": {
@@ -443,7 +413,8 @@
         "causal_mechanism": "string",
         "variation_effect": "string",
         "status": "SUPPORTED | CANDIDATE",
-        "evidence": "object[]"
+        "evidence": "object[]",
+        "alternative_id": "string"
       }
     },
     "CriticalQuestionAssessment": {
@@ -466,6 +437,27 @@
         "observation": "string",
         "source_artifacts": "string[]",
         "outcome": "string"
+      }
+    },
+    "AlternativeEvaluationResult": {
+      "description": "Deterministic consolidation of all scenario judgments for one alternative and its tactics.",
+      "attributes": {
+        "alternative_id": "string",
+        "scenario_ids": "string[]",
+        "tactic_ids": "string[]",
+        "criteria": "object keyed by C1 through C6",
+        "action": "alternative_action",
+        "rule": "R1 | R2 | R3 | R4"
+      }
+    },
+    "ArchitecturalNonRisk": {
+      "description": "A justified absence of a risk under the stated conditions and evidence.",
+      "attributes": {
+        "id": "string",
+        "decision_id": "string",
+        "scenario_ids": "string[]",
+        "justification": "string",
+        "evidence": "object[]"
       }
     }
   },
@@ -773,6 +765,18 @@
       "to": "EvaluationIteration",
       "name": "may_be_revised_in",
       "meaning": "Assessment revisions retain traceable iteration history."
+    },
+    {
+      "from": "ScenarioAssessment",
+      "to": "AlternativeEvaluationResult",
+      "name": "consolidates",
+      "meaning": "Each alternative result consolidates its scenario judgments by rule priority."
+    },
+    {
+      "from": "ADRContent",
+      "to": "AlternativeEvaluationResult",
+      "name": "preserves_outcomes",
+      "meaning": "A proposed ADR records the calculated action and applied rule for each alternative."
     }
   ]
 }

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,13 +7,14 @@ name = "kataliarc-kit"
 version = "0.2.0"
 description = "Local CLI for structured software architecture decision support"
 readme = "README.md"
-requires-python = ">=3.11"
-license = {text = "Apache-2.0"}
+requires-python = ">=3.9,<3.16"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [{name = "KatalIArc Kit contributors"}]
-dependencies = ["prompt-toolkit>=3.0"]
+dependencies = ["prompt-toolkit>=3.0", "jsonschema>=4.22"]
 
 [project.optional-dependencies]
-test = ["pytest>=8"]
+test = ["pytest>=8", "tomli>=1.1; python_version < '3.11'"]
 
 [project.scripts]
 kataliarc = "kataliarc.cli:main"

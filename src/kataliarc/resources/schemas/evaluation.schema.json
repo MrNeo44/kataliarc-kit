@@ -1,36 +1,347 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "KatalIArc Walton qualitative scenario evaluation",
+  "title": "KatalIArc Walton unified alternative assessment",
   "type": "object",
-  "required": ["rubric_version", "assessments", "comparison", "risks", "sensitivity_points", "tradeoffs", "iteration", "iteration_requests", "iteration_history"],
   "properties": {
-    "rubric_version": {"type": "string", "minLength": 1},
-    "assessments": {"type": "array", "items": {"$ref": "#/$defs/assessment"}},
-    "comparison": {"type": "object", "properties": {"constraints": {"type": "array"}, "dominance": {"type": "array"}, "tradeoffs": {"type": "array"}, "recommendation": {}}},
-    "risks": {"type": "array", "items": {"$ref": "#/$defs/risk"}},
-    "sensitivity_points": {"type": "array", "items": {"$ref": "#/$defs/sensitivity"}},
-    "tradeoffs": {"type": "array", "items": {"$ref": "#/$defs/tradeoff"}},
-    "iteration": {"type": "integer", "minimum": 0},
-    "iteration_requests": {"type": "array", "items": {"type": "object", "required": ["request_type", "reason", "target_scenario_ids", "target_alternative_ids", "request_for_toulmin"], "properties": {"request_type": {"enum": ["new_tactic", "new_combination", "evidence", "argument_revision", "reevaluation"]}, "reason": {"type": "string"}, "target_scenario_ids": {"type": "array", "items": {"type": "string"}}, "target_alternative_ids": {"type": "array", "items": {"type": "string"}}, "request_for_toulmin": {"type": "string"}, "status": {"enum": ["PENDING", "RESOLVED", "UNRESOLVED"]}}}},
-    "iteration_history": {"type": "array", "items": {"type": "object", "required": ["iteration", "action", "observation", "source_artifacts", "outcome"], "properties": {"iteration": {"type": "integer", "minimum": 0}, "action": {"type": "string"}, "observation": {"type": "string"}, "source_artifacts": {"type": "array", "items": {"type": "string"}}, "outcome": {"type": "string"}, "previous_assessments": {"type": "array"}}}},
-    "assessment_history": {"type": "array", "items": {"type": "object"}}
-  },
-  "$defs": {
-    "assessment": {
+    "rubric_version": {"const": "kataliarc-walton-unified-v2"},
+    "skill_version": {"type": "string", "pattern": "\\S"},
+    "model_version": {"type": "string", "pattern": "\\S"},
+    "assessments": {"type": "array", "items": {"$ref": "#/$defs/assessment"}, "minItems": 0},
+    "alternative_results": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/alternative_result"},
+      "minItems": 0
+    },
+    "comparison": {
       "type": "object",
-      "required": ["alternative_id", "scenario_id", "tactic_ids", "design_decision", "direction", "rationale", "contribution_direction", "sufficiency", "contribution_label", "neutral_justified", "evidence_status", "compliance_status", "causal_justification", "assumptions", "objections", "critical_question_assessments", "rubric_version"],
       "properties": {
-        "alternative_id": {"type": "string"}, "scenario_id": {"type": "string"}, "tactic_ids": {"type": "array", "items": {"type": "string"}}, "design_decision": {"type": "string"},
-        "direction": {"enum": ["favorable", "condicionado", "desfavorable", "indeterminado"]}, "rationale": {"type": "string"},
-        "contribution_direction": {"enum": ["POSITIVE", "NEGATIVE", "NEUTRAL", "UNKNOWN"]}, "sufficiency": {"enum": ["SUFFICIENT", "INSUFFICIENT", "UNKNOWN"]}, "contribution_label": {"enum": ["MAKE (++)", "HELP (+)", "SomePositive", "HURT (-)", "BREAK (--)", "SomeNegative", "UNKNOWN (?)", "NEUTRAL (0)"]}, "neutral_justified": {"type": "boolean"},
-        "evidence_status": {"enum": ["documentada", "inferencia/hipótesis", "desconocida"]}, "compliance_status": {"enum": ["VERIFIED_SATISFIED", "VERIFIED_UNSATISFIED", "PREDICTED_UNDER_ASSUMPTIONS", "UNVERIFIED", "verificado", "provisional", "incumplido", "desconocido"]},
-        "causal_justification": {"$ref": "#/$defs/causal"}, "assumptions": {"type": "array", "items": {"type": "string"}}, "objections": {"type": "array"}, "critical_question_assessments": {"type": "array", "items": {"$ref": "#/$defs/critical_question"}}, "rubric_version": {"type": "string"}
+        "constraints": {"type": "array"},
+        "dominance": {"type": "array"},
+        "tradeoffs": {"type": "array"},
+        "recommendation": {}
       }
     },
-    "causal": {"type": "object", "required": ["claim", "mechanism", "evidence", "assumptions", "applicability_conditions", "expected_effect", "sufficiency_rationale", "counterarguments", "conclusion"], "properties": {"claim": {"type": "string"}, "mechanism": {"type": "string"}, "evidence": {"type": "array"}, "assumptions": {"type": "array"}, "applicability_conditions": {"type": "array"}, "expected_effect": {"type": "string"}, "sufficiency_rationale": {"type": "string"}, "counterarguments": {"type": "array"}, "conclusion": {"type": "string"}}},
-    "critical_question": {"type": "object", "required": ["scheme", "question", "claim_ref", "answer", "result", "evidence_refs", "objection"], "properties": {"scheme": {"enum": ["practical_reasoning", "causal_argument", "analogy", "expert_opinion", "consequences"]}, "question": {"type": "string"}, "claim_ref": {"type": "string"}, "answer": {"type": "string"}, "result": {"enum": ["supported", "challenged", "unresolved"]}, "evidence_refs": {"type": "array"}, "objection": {"type": ["string", "null"]}}},
-    "risk": {"type": "object", "required": ["id", "decision_id", "scenario_ids", "causal_mechanism", "consequence", "evidence", "status", "mitigation"], "properties": {"id": {"type": "string"}, "decision_id": {"type": "string"}, "scenario_ids": {"type": "array", "items": {"type": "string"}}, "causal_mechanism": {"type": "string"}, "consequence": {"type": "string"}, "evidence": {"type": "array"}, "status": {"enum": ["CONFIRMED_CONDITION", "HYPOTHETICAL", "CANDIDATE"]}, "mitigation": {"type": "string"}}},
-    "sensitivity": {"type": "object", "required": ["id", "property", "scenario_id", "response_measure", "causal_mechanism", "variation_effect", "status", "evidence"], "properties": {"id": {"type": "string"}, "property": {"type": "string"}, "scenario_id": {"type": "string"}, "response_measure": {}, "causal_mechanism": {"type": "string"}, "variation_effect": {"type": "string"}, "status": {"enum": ["SUPPORTED", "CANDIDATE"]}, "evidence": {"type": "array"}}},
-    "tradeoff": {"type": "object", "required": ["id", "decision_id", "property", "affected_scenario_ids", "positive_effects", "negative_effects", "shared_mechanism", "business_priorities", "assumptions", "evidence", "mitigations"], "properties": {"id": {"type": "string"}, "decision_id": {"type": "string"}, "property": {"type": "string"}, "affected_scenario_ids": {"type": "array", "minItems": 2, "items": {"type": "string"}}, "positive_effects": {"type": "array"}, "negative_effects": {"type": "array"}, "shared_mechanism": {"type": "string"}, "business_priorities": {"type": "array"}, "assumptions": {"type": "array"}, "evidence": {"type": "array"}, "mitigations": {"type": "array"}}}
+    "risks": {"type": "array", "items": {"$ref": "#/$defs/risk"}, "minItems": 0},
+    "no_risks": {"type": "array", "items": {"$ref": "#/$defs/no_risk"}, "minItems": 0},
+    "sensitivity_points": {"type": "array", "items": {"$ref": "#/$defs/sensitivity"}, "minItems": 0},
+    "tradeoffs": {"type": "array", "items": {"$ref": "#/$defs/tradeoff"}, "minItems": 0},
+    "iteration": {"type": "integer", "minimum": 0},
+    "iteration_requests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "request_type",
+          "reason",
+          "target_scenario_ids",
+          "target_alternative_ids",
+          "request_for_toulmin"
+        ],
+        "properties": {
+          "request_type": {
+            "enum": ["new_tactic", "new_combination", "evidence", "argument_revision", "reevaluation"]
+          },
+          "reason": {"type": "string", "pattern": "\\S"},
+          "target_scenario_ids": {
+            "type": "array",
+            "items": {"type": "string", "pattern": "\\S"},
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "target_alternative_ids": {
+            "type": "array",
+            "items": {"type": "string", "pattern": "\\S"},
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "request_for_toulmin": {"type": "string", "pattern": "\\S"},
+          "status": {"enum": ["PENDING", "RESOLVED", "UNRESOLVED"]}
+        }
+      }
+    },
+    "iteration_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["iteration", "action", "observation", "source_artifacts", "outcome"],
+        "properties": {
+          "iteration": {"type": "integer", "minimum": 0},
+          "action": {"type": "string"},
+          "observation": {"type": "string"},
+          "source_artifacts": {"type": "array", "items": {"type": "string"}},
+          "outcome": {"type": "string"},
+          "previous_assessments": {"type": "array"}
+        }
+      }
+    },
+    "assessment_history": {"type": "array", "items": {"type": "object"}}
+  },
+  "required": [
+    "rubric_version",
+    "assessments",
+    "risks",
+    "no_risks",
+    "sensitivity_points",
+    "tradeoffs",
+    "iteration",
+    "iteration_requests",
+    "iteration_history"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "critical_question": {
+      "type": "object",
+      "required": ["scheme", "question", "claim_ref", "answer", "result", "evidence_refs", "objection"],
+      "properties": {
+        "scheme": {
+          "enum": ["practical_reasoning", "causal_argument", "analogy", "expert_opinion", "consequences"]
+        },
+        "question": {"type": "string", "pattern": "\\S"},
+        "claim_ref": {"type": "string", "pattern": "\\S"},
+        "answer": {"type": "string", "pattern": "\\S"},
+        "result": {"enum": ["supported", "challenged", "unresolved"]},
+        "evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/evidence"}, "minItems": 0},
+        "objection": {"type": ["string", "null"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"result": {"enum": ["challenged", "unresolved"]}}},
+          "then": {"properties": {"objection": {"type": "string", "pattern": "\\S"}}}
+        }
+      ]
+    },
+    "risk": {
+      "type": "object",
+      "required": [
+        "id",
+        "decision_id",
+        "scenario_ids",
+        "causal_mechanism",
+        "consequence",
+        "evidence",
+        "status",
+        "mitigation"
+      ],
+      "properties": {
+        "id": {"type": "string"},
+        "decision_id": {"type": "string"},
+        "scenario_ids": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "\\S"},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "causal_mechanism": {"type": "string"},
+        "consequence": {"type": "string"},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}, "minItems": 0},
+        "status": {"enum": ["CONFIRMED_CONDITION", "HYPOTHETICAL", "CANDIDATE"]},
+        "mitigation": {"type": "string"}
+      }
+    },
+    "sensitivity": {
+      "type": "object",
+      "required": [
+        "id",
+        "property",
+        "scenario_id",
+        "response_measure",
+        "causal_mechanism",
+        "variation_effect",
+        "status",
+        "evidence",
+        "alternative_id"
+      ],
+      "properties": {
+        "id": {"type": "string"},
+        "property": {"type": "string"},
+        "scenario_id": {"type": "string"},
+        "response_measure": {},
+        "causal_mechanism": {"type": "string"},
+        "variation_effect": {"type": "string"},
+        "status": {"enum": ["SUPPORTED", "CANDIDATE"]},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}, "minItems": 0},
+        "alternative_id": {"type": "string", "pattern": "\\S"}
+      }
+    },
+    "tradeoff": {
+      "type": "object",
+      "required": [
+        "id",
+        "decision_id",
+        "property",
+        "affected_scenario_ids",
+        "positive_effects",
+        "negative_effects",
+        "shared_mechanism",
+        "business_priorities",
+        "assumptions",
+        "evidence",
+        "mitigations"
+      ],
+      "properties": {
+        "id": {"type": "string"},
+        "decision_id": {"type": "string"},
+        "property": {"type": "string"},
+        "affected_scenario_ids": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "\\S"},
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "positive_effects": {"type": "array"},
+        "negative_effects": {"type": "array"},
+        "shared_mechanism": {"type": "string"},
+        "business_priorities": {"type": "array"},
+        "assumptions": {"type": "array"},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}, "minItems": 0},
+        "mitigations": {"type": "array"}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "kind": {"enum": ["DIRECTA", "INFERENCIA", "ANALOGIA", "CATALOGO"]},
+        "reference": {"type": "string", "pattern": "\\S"},
+        "adr_id": {"type": "string", "pattern": "\\S"}
+      },
+      "required": ["kind", "reference"],
+      "additionalProperties": false
+    },
+    "judgment": {
+      "type": "object",
+      "properties": {
+        "value": {"enum": ["NO_CUMPLE", "INCIERTO", "REQUIERE_AJUSTE", "CUMPLE"]},
+        "justification": {"type": "string", "pattern": "\\S"},
+        "evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/evidence"}, "minItems": 0},
+        "assumptions": {"type": "array", "items": {"type": "string", "pattern": "\\S"}, "minItems": 0},
+        "pending_information": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "\\S"},
+          "minItems": 1
+        },
+        "adjustment": {"type": "string", "pattern": "\\S"},
+        "impediment": {"type": "string", "pattern": "\\S"},
+        "impediment_ref": {
+          "type": "object",
+          "properties": {
+            "scenario_id": {"type": "string", "pattern": "\\S"},
+            "constraint_id": {"type": "string", "pattern": "\\S"}
+          },
+          "minProperties": 1,
+          "maxProperties": 1,
+          "additionalProperties": false
+        }
+      },
+      "required": ["value", "justification", "evidence_refs", "assumptions"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {"properties": {"value": {"const": "INCIERTO"}}},
+          "then": {"required": ["pending_information"]}
+        },
+        {
+          "if": {"properties": {"value": {"const": "REQUIERE_AJUSTE"}}},
+          "then": {"required": ["adjustment"]}
+        },
+        {
+          "if": {"properties": {"value": {"const": "NO_CUMPLE"}}},
+          "then": {
+            "required": ["impediment", "impediment_ref"],
+            "properties": {"evidence_refs": {"contains": {"properties": {"kind": {"const": "DIRECTA"}}}}}
+          }
+        }
+      ]
+    },
+    "assessment": {
+      "type": "object",
+      "properties": {
+        "alternative_id": {"type": "string", "pattern": "\\S"},
+        "scenario_id": {"type": "string", "pattern": "\\S"},
+        "tactic_ids": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "\\S"},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "criteria": {
+          "type": "object",
+          "properties": {
+            "C1": {"$ref": "#/$defs/judgment"},
+            "C2": {"$ref": "#/$defs/judgment"},
+            "C3": {"$ref": "#/$defs/judgment"},
+            "C4": {"$ref": "#/$defs/judgment"},
+            "C5": {"$ref": "#/$defs/judgment"},
+            "C6": {"$ref": "#/$defs/judgment"}
+          },
+          "required": ["C1", "C2", "C3", "C4", "C5", "C6"],
+          "additionalProperties": false
+        },
+        "critical_question_assessments": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/critical_question"},
+          "minItems": 1
+        }
+      },
+      "required": [
+        "alternative_id",
+        "scenario_id",
+        "tactic_ids",
+        "criteria",
+        "critical_question_assessments"
+      ],
+      "additionalProperties": false
+    },
+    "no_risk": {
+      "type": "object",
+      "properties": {
+        "id": {"type": "string", "pattern": "\\S"},
+        "decision_id": {"type": "string", "pattern": "\\S"},
+        "scenario_ids": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "\\S"},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "justification": {"type": "string", "pattern": "\\S"},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}, "minItems": 1}
+      },
+      "required": ["id", "decision_id", "scenario_ids", "justification", "evidence"],
+      "additionalProperties": false
+    },
+    "alternative_result": {
+      "type": "object",
+      "properties": {
+        "alternative_id": {"type": "string", "pattern": "\\S"},
+        "scenario_ids": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "\\S"},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "tactic_ids": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "\\S"},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "criteria": {
+          "type": "object",
+          "properties": {
+            "C1": {"enum": ["NO_CUMPLE", "INCIERTO", "REQUIERE_AJUSTE", "CUMPLE"]},
+            "C2": {"enum": ["NO_CUMPLE", "INCIERTO", "REQUIERE_AJUSTE", "CUMPLE"]},
+            "C3": {"enum": ["NO_CUMPLE", "INCIERTO", "REQUIERE_AJUSTE", "CUMPLE"]},
+            "C4": {"enum": ["NO_CUMPLE", "INCIERTO", "REQUIERE_AJUSTE", "CUMPLE"]},
+            "C5": {"enum": ["NO_CUMPLE", "INCIERTO", "REQUIERE_AJUSTE", "CUMPLE"]},
+            "C6": {"enum": ["NO_CUMPLE", "INCIERTO", "REQUIERE_AJUSTE", "CUMPLE"]}
+          },
+          "required": ["C1", "C2", "C3", "C4", "C5", "C6"],
+          "additionalProperties": false
+        },
+        "action": {"enum": ["DESCARTAR", "POSPONER", "MODIFICAR", "MANTENER"]},
+        "rule": {"enum": ["R1", "R2", "R3", "R4"]}
+      },
+      "required": ["alternative_id", "scenario_ids", "tactic_ids", "criteria", "action", "rule"],
+      "additionalProperties": false
+    }
   }
 }

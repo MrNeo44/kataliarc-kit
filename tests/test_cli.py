@@ -1,25 +1,78 @@
 import json
+import hashlib
 from pathlib import Path
 import subprocess
 import sys
 import io
-import tomllib
+
+import pytest
+
+if sys.version_info < (3, 11):
+    import tomli as tomllib
+else:
+    import tomllib
 
 from kataliarc import cli
-from kataliarc.providers import AgentProvider, CodexProvider
+from kataliarc.providers import AgentProvider, AgentResult, CodexProvider
 from kataliarc.adapters import ADAPTERS
+from kataliarc.adapters.codex import CODEX_INSTRUCTIONS, CodexAdapter
 from kataliarc.wizard import BANNER, render_banner, select_agent
 
 
-def test_init_is_idempotent_and_installs_skills(tmp_path, monkeypatch):
+def test_init_is_idempotent_and_installs_codex_integration(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     assert cli.init("codex") == 0
     before = (tmp_path / ".kataliarc/context.json").read_text()
     assert cli.init("codex") == 0
     assert (tmp_path / ".kataliarc/context.json").read_text() == before
+    instructions = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+    assert instructions == CODEX_INSTRUCTIONS
+    assert "delegate the requested work to the matching subagent" in instructions
     skill = tmp_path / ".agents/skills/kataliarc-pohl/SKILL.md"
     assert "name: kataliarc-pohl" in skill.read_text()
     assert "description:" in skill.read_text()
+    for role in ("pohl", "toulmin", "walton"):
+        path = tmp_path / ".codex/agents" / f"{role}.toml"
+        agent = tomllib.loads(path.read_text(encoding="utf-8"))
+        assert agent["name"] == role
+        assert agent["description"]
+        assert f"kataliarc-{role}" in agent["developer_instructions"]
+
+
+@pytest.mark.parametrize("upgrade_command", ["init", "update"])
+def test_codex_upgrade_adds_and_tracks_toulmin_and_walton(tmp_path, monkeypatch, capsys, upgrade_command):
+    from kataliarc.management import doctor, update
+
+    pohl = ".codex/agents/pohl.toml"
+    old_instructions = "<!-- KatalIArc managed -->\nFollow the installed skills.\n"
+    instructions = tmp_path / "AGENTS.md"
+    with monkeypatch.context() as legacy:
+        legacy.setattr(CodexAdapter, "extra_files", {pohl: CodexAdapter.extra_files[pohl]})
+        legacy.setattr(CodexAdapter, "instruction_files", {"AGENTS.md": old_instructions})
+        assert cli.init("codex", tmp_path) == 0
+    original_pohl = (tmp_path / pohl).read_bytes()
+    missing = [".codex/agents/toulmin.toml", ".codex/agents/walton.toml"]
+    assert doctor(tmp_path) == 1
+    report = capsys.readouterr().out
+    assert all(relative in report for relative in missing)
+    if upgrade_command == "init":
+        assert cli.init("codex", tmp_path) == 0
+        assert instructions.read_text(encoding="utf-8") == old_instructions
+    else:
+        assert update(tmp_path, dry_run=True) == 0
+        report = capsys.readouterr().out
+        assert "UPDATE AGENTS.md" in report
+        assert instructions.read_text(encoding="utf-8") == old_instructions
+        for relative in missing:
+            assert f"UPDATE {relative}" in report
+            assert not (tmp_path / relative).exists()
+        assert update(tmp_path, yes=True) == 0
+        assert instructions.read_text(encoding="utf-8") == CODEX_INSTRUCTIONS
+    manifest = json.loads((tmp_path / ".kataliarc/managed-files.json").read_text(encoding="utf-8"))
+    for relative in missing:
+        assert manifest["files"][relative] == hashlib.sha256((tmp_path / relative).read_bytes()).hexdigest()
+    assert (tmp_path / pohl).read_bytes() == original_pohl
+    assert doctor(tmp_path) == 0
 
 
 def test_validate_accepts_empty_init(tmp_path, monkeypatch):
@@ -79,7 +132,7 @@ def test_help_entrypoint():
     env = dict(__import__("os").environ, PYTHONPATH=str(Path(__file__).resolve().parents[1] / "src"))
     result = subprocess.run([sys.executable, "-m", "kataliarc.cli", "--help"], capture_output=True, text=True, env=env)
     assert result.returncode == 0
-    assert "pohl" in result.stdout and "validate" in result.stdout
+    assert "pohl elicit" in result.stdout
 
 
 def test_agent_missing(tmp_path, monkeypatch):
@@ -87,6 +140,27 @@ def test_agent_missing(tmp_path, monkeypatch):
     cli.init("codex")
     monkeypatch.setattr("kataliarc.providers.shutil.which", lambda _: None)
     assert cli.run_stage("design", True) == 2
+
+
+@pytest.mark.parametrize("provider", ["codex", "gemini"])
+def test_elicitation_routes_to_pohl_subagent_only_in_codex(tmp_path, monkeypatch, provider):
+    assert cli.init(provider, tmp_path, language="en") == 0
+    calls = []
+
+    def run(self, agent, prompt, cwd):
+        calls.append((agent, prompt, cwd))
+        return AgentResult(0)
+
+    monkeypatch.setattr(AgentProvider, "run", run)
+    assert cli.run_stage("elicit", True) == 0
+    [(agent, prompt, cwd)] = calls
+    assert (agent, cwd) == (provider, tmp_path)
+    if provider == "codex":
+        assert prompt.startswith("Delegate the phase below to the `pohl` subagent")
+        assert "apply the `kataliarc-pohl` skill" in prompt
+        assert prompt.endswith(cli.PROMPTS_EN["elicit"])
+    else:
+        assert prompt == cli.PROMPTS_EN["elicit"]
 
 
 def test_codex_adapter_simulated(tmp_path, monkeypatch):
@@ -150,6 +224,7 @@ def test_selector_arrow_navigation(monkeypatch):
             return self.result
         def exit(self, *, result=None, exception=None): self.result = result
 
+    monkeypatch.setenv("TERM", "xterm")
     monkeypatch.setattr(wizard, "detect_agents", lambda: {"codex": "/bin/codex", "claude": None, "gemini": None, "copilot": "/bin/copilot"})
     monkeypatch.setattr(wizard, "Application", FakeApplication)
 
@@ -241,8 +316,12 @@ def test_cli_init_flag_and_commands_help(tmp_path):
     assert init.returncode == 0
     help_result = subprocess.run([sys.executable, "-m", "kataliarc.cli", "--help"], capture_output=True, text=True, env=env)
     assert help_result.returncode == 0
-    for command in ("init", "validate", "status", "decide", "doctor", "update", "pohl", "toulmin", "walton"):
+    for command in ("init", "pohl elicit", "toulmin design", "walton decide"):
         assert command in help_result.stdout
+    for command in ("validate", "status", "decide", "doctor", "update"):
+        topic = subprocess.run([sys.executable, "-m", "kataliarc.cli", "help", command], capture_output=True, text=True, env=env)
+        assert topic.returncode == 0
+        assert f"kataliarc {command}" in topic.stdout
     assert "kazman" not in help_result.stdout
     for retired_alias in ("elicit", "prioritize", "design", "evaluate", "review"):
         assert "{" + retired_alias not in help_result.stdout
@@ -259,11 +338,18 @@ def test_doctor_json_and_update_dry_run_and_conflict_preservation(tmp_path, monk
     skill = tmp_path / ".agents/skills/kataliarc-pohl/SKILL.md"
     skill.write_text("my local customization", encoding="utf-8")
     original = skill.read_text(encoding="utf-8")
+    agent = tmp_path / ".codex/agents/walton.toml"
+    custom_agent = agent.read_text(encoding="utf-8") + "\n# My local customization\n"
+    agent.write_text(custom_agent, encoding="utf-8")
     assert update(tmp_path, dry_run=True, yes=True) == 0
     assert skill.read_text(encoding="utf-8") == original
+    assert agent.read_text(encoding="utf-8") == custom_agent
     assert update(tmp_path, yes=True) == 0
     assert skill.read_text(encoding="utf-8") == original
-    assert "CONFLICT" in capsys.readouterr().out
+    assert agent.read_text(encoding="utf-8") == custom_agent
+    report = capsys.readouterr().out
+    assert "CONFLICT (preserved) .agents/skills/kataliarc-pohl/SKILL.md" in report
+    assert "CONFLICT (preserved) .codex/agents/walton.toml" in report
 
 
 def test_doctor_is_read_only_and_configures_knowledge_paths(tmp_path, monkeypatch):
@@ -303,7 +389,6 @@ def test_update_removes_unmodified_obsolete_kazman_skill(tmp_path, monkeypatch, 
     legacy_skill.write_text("<!-- KatalIArc managed -->\nold skill", encoding="utf-8")
     manifest_path = tmp_path / ".kataliarc/managed-files.json"
     manifest = json.loads(manifest_path.read_text())
-    import hashlib
     rel = str(legacy_skill.relative_to(tmp_path))
     manifest["files"][rel] = hashlib.sha256(legacy_skill.read_bytes()).hexdigest()
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
@@ -339,6 +424,8 @@ def test_global_install_uses_user_paths(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     assert cli.init("codex", tmp_path, global_scope=True) == 0
     assert (tmp_path / ".agents/skills/kataliarc-pohl/SKILL.md").is_file()
-    assert (tmp_path / ".codex/AGENTS.md").is_file()
+    assert (tmp_path / ".codex/AGENTS.md").read_text(encoding="utf-8") == CODEX_INSTRUCTIONS
+    for role in ("pohl", "toulmin", "walton"):
+        assert (tmp_path / ".codex/agents" / f"{role}.toml").is_file()
     config = json.loads((tmp_path / ".kataliarc/config.json").read_text())
     assert config["scope"] == "user"

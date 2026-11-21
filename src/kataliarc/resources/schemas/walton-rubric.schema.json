@@ -1,16 +1,77 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "KatalIArc Walton qualitative evaluation rubric",
+  "title": "KatalIArc Walton unified evaluation rubric",
   "type": "object",
-  "required": ["id", "version", "scope", "dimensions", "contribution_rules", "compliance_statuses", "rules", "critical_question_schemes"],
   "properties": {
-    "id": {"type": "string", "minLength": 1},
-    "version": {"type": "string", "minLength": 1},
+    "id": {"const": "kataliarc-walton-unified-v2"},
+    "version": {"const": "2.0.0"},
     "scope": {"const": "alternative-quality-scenario-pair"},
-    "dimensions": {"type": "array", "minItems": 8, "items": {"type": "object", "required": ["id", "name", "question"], "properties": {"id": {"type": "string"}, "name": {"type": "string"}, "question": {"type": "string"}}}},
-    "contribution_rules": {"type": "array", "minItems": 8, "items": {"type": "object", "required": ["direction", "sufficiency", "label"], "properties": {"direction": {"enum": ["POSITIVE", "NEGATIVE", "NEUTRAL", "UNKNOWN"]}, "sufficiency": {"enum": ["SUFFICIENT", "INSUFFICIENT", "UNKNOWN"]}, "label": {"enum": ["MAKE (++)", "HELP (+)", "SomePositive", "HURT (-)", "BREAK (--)", "SomeNegative", "UNKNOWN (?)", "NEUTRAL (0)"]}, "requires_neutral_justification": {"type": "boolean"}}}},
-    "compliance_statuses": {"type": "array", "items": {"enum": ["VERIFIED_SATISFIED", "VERIFIED_UNSATISFIED", "PREDICTED_UNDER_ASSUMPTIONS", "UNVERIFIED"]}},
-    "rules": {"type": "array", "items": {"type": "string"}},
-    "critical_question_schemes": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}}
-  }
+    "criteria": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"enum": ["C1", "C2", "C3", "C4", "C5", "C6"]},
+          "name": {"type": "string", "pattern": "\\S"},
+          "question": {"type": "string", "pattern": "\\S"}
+        },
+        "required": ["id", "name", "question"],
+        "additionalProperties": false
+      }
+    },
+    "values": {
+      "type": "object",
+      "properties": {
+        "NO_CUMPLE": {"type": "string", "pattern": "\\S"},
+        "INCIERTO": {"type": "string", "pattern": "\\S"},
+        "REQUIERE_AJUSTE": {"type": "string", "pattern": "\\S"},
+        "CUMPLE": {"type": "string", "pattern": "\\S"}
+      },
+      "required": ["NO_CUMPLE", "INCIERTO", "REQUIERE_AJUSTE", "CUMPLE"],
+      "additionalProperties": false
+    },
+    "decision_rules": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "properties": {
+          "value": {"enum": ["NO_CUMPLE", "INCIERTO", "REQUIERE_AJUSTE", "CUMPLE"]},
+          "action": {"enum": ["DESCARTAR", "POSPONER", "MODIFICAR", "MANTENER"]},
+          "rule": {"enum": ["R1", "R2", "R3", "R4"]}
+        },
+        "required": ["value", "action", "rule"],
+        "additionalProperties": false
+      }
+    },
+    "critical_question_schemes": {
+      "type": "object",
+      "properties": {
+        "practical_reasoning": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "\\S"},
+          "minItems": 1
+        },
+        "causal_argument": {"type": "array", "items": {"type": "string", "pattern": "\\S"}, "minItems": 1},
+        "analogy": {"type": "array", "items": {"type": "string", "pattern": "\\S"}, "minItems": 1},
+        "expert_opinion": {"type": "array", "items": {"type": "string", "pattern": "\\S"}, "minItems": 1},
+        "consequences": {"type": "array", "items": {"type": "string", "pattern": "\\S"}, "minItems": 1}
+      },
+      "required": ["practical_reasoning", "causal_argument", "analogy", "expert_opinion", "consequences"],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "id",
+    "version",
+    "scope",
+    "criteria",
+    "values",
+    "decision_rules",
+    "critical_question_schemes"
+  ],
+  "additionalProperties": false
 }

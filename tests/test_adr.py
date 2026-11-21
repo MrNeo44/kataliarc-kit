@@ -14,7 +14,7 @@ from kataliarc.adr import (
 )
 from kataliarc.rag import RAGError
 from kataliarc.toulmin import _accepted_adr_hits, build_toulmin_input
-from kataliarc.evaluation import RUBRIC_VERSION
+from kataliarc.evaluation import CRITERIA, RUBRIC_VERSION, finalize_evaluation
 
 
 def initialize(tmp_path, monkeypatch, *, rag=False):
@@ -46,14 +46,19 @@ def prepare_analysis(root: Path):
     evaluation["rubric_version"] = RUBRIC_VERSION
     def assessment(alternative_id):
         return {
-            "alternative_id": alternative_id, "scenario_id": "QA-01", "tactic_ids": ["T-01"], "design_decision": "Replicate service",
-            "direction": "favorable", "rationale": "Health checks detect failure; recovery mechanism is still required.",
-            "contribution_direction": "POSITIVE", "sufficiency": "INSUFFICIENT", "contribution_label": "HELP (+)", "neutral_justified": False,
-            "evidence_status": "inferencia/hipótesis", "compliance_status": "PREDICTED_UNDER_ASSUMPTIONS",
-            "causal_justification": {"claim": "Failure detection can support recovery.", "mechanism": "Health check detects failed instances.", "evidence": [], "assumptions": ["Recovery controller is configured"], "applicability_conditions": ["Health endpoint is reliable"], "expected_effect": "Faster failure recognition", "sufficiency_rationale": "Detection alone does not restore service.", "counterarguments": ["No failover evidence"], "conclusion": "Positive but insufficient."},
-            "assumptions": ["Recovery controller is configured"], "objections": [], "critical_question_assessments": [], "rubric_version": RUBRIC_VERSION,
+            "alternative_id": alternative_id, "scenario_id": "QA-01", "tactic_ids": ["T-01"],
+            "criteria": {
+                key: {"value": "CUMPLE", "justification": "The recorded scenario check supports the judgment.", "evidence_refs": [], "assumptions": []}
+                for key in CRITERIA
+            },
+            "critical_question_assessments": [{
+                "scheme": "causal_argument", "question": "Was failover tested?", "claim_ref": "QA-01/C4",
+                "answer": "Further failover testing is desirable.", "result": "supported", "evidence_refs": [], "objection": None,
+            }],
         }
     evaluation["assessments"] = [assessment("ALT-01"), assessment("ALT-02")]
+    utility = json.loads((root / "utility-tree.json").read_text())
+    evaluation = finalize_evaluation(evaluation, context, tactics, utility)
     (root / "evaluation.json").write_text(json.dumps(evaluation), encoding="utf-8")
     decision = json.loads((root / "decision.json").read_text())
     decision.update({"selected_alternative_id": "ALT-01", "status": "provisional", "rationale": "Best supported by current assessment.", "risks": ["Failover may lose in-flight work"], "tradeoffs": ["Higher operational complexity"]})
@@ -89,6 +94,9 @@ def test_walton_review_persists_structured_proposed_adr(tmp_path, monkeypatch):
     assert adr["current_version"]["sections"]["quality_scenarios"][0]["id"] == "QA-01"
     assert adr["current_version"]["sections"]["toulmin_arguments"][0]["claim"] == "Use health checks"
     assert "Was failover tested?" in adr["current_version"]["sections"]["walton_critical_questions"]
+    sections = adr["current_version"]["sections"]
+    assert {row["action"] for row in sections["alternative_results"]} == {"MANTENER"}
+    assert sections["alternatives_considered"]["discarded"] == []
 
 
 def test_proposed_and_rejected_adrs_are_never_indexed(tmp_path, monkeypatch):
@@ -280,7 +288,8 @@ def test_walton_instructions_include_accepted_adr_critical_review():
     skill = Path(__file__).parents[1] / "src/kataliarc/templates/skills/walton/SKILL.md"
     text = skill.read_text(encoding="utf-8")
     assert "toulmin-input.json" in text
-    assert "contextual claims to challenge" in text
+    assert "Historical ADRs are contextual evidence" in text
+    assert "transfer to the current design remains a hypothesis" in text
 
 
 def test_remote_index_retry_finds_existing_stable_index_key_without_duplicate_upload():

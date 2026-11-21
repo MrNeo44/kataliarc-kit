@@ -126,6 +126,7 @@ def test_design_cli_prepares_inputs_and_invokes_provider_only_for_design(tmp_pat
     monkeypatch.setattr(cli, "AgentProvider", Provider)
     assert cli.run_stage("design", True, repository=repo, rag_enabled=False) == 0
     assert calls and "toulmin-input.json" in calls[0][1]
+    assert calls[0][1].startswith("Delegate the phase below to the `toulmin` subagent")
     assert calls[0][2] == project
     package = json.loads((project / ".kataliarc/toulmin-input.json").read_text())
     assert package["rag"]["status"] == "disabled"
