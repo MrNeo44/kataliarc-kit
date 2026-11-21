@@ -21,6 +21,8 @@ A cross-platform CLI for traceable software architecture decisions using quality
 
 KatalIArc Kit 0.2.0 supports CPython 3.9 through 3.15. Use pip 21.3 or later for editable installation. On macOS, use a Python installation that provides pip, such as the installer from python.org.
 
+The package installs `prompt-toolkit` for the interactive wizard and `jsonschema` to validate the versioned Walton rubric and evaluation records.
+
 ```sh
 git clone https://github.com/MrNeo44/kataliarc-kit.git
 cd kataliarc-kit
@@ -101,6 +103,12 @@ For Codex, `AGENTS.md` tells the main session which native subagent to use for e
 
 For a user-level Codex installation, `--global` places the instructions and agents under `~/.codex/` and the skills under `~/.agents/skills/`. In a project already initialized with KatalIArc, preview managed changes with `kataliarc update --dry-run` and apply them with `kataliarc update --yes`. [Codex custom agents](https://learn.chatgpt.com/docs/agent-configuration/subagents#custom-agents)
 
+### Documentation
+
+- [Project instructions](AGENTS.md) and Codex role definitions for [Pohl](.codex/agents/pohl.toml), [Toulmin](.codex/agents/toulmin.toml), and [Walton](.codex/agents/walton.toml).
+- Method guides for [elicitation](src/kataliarc/templates/skills/pohl/SKILL.md), [design and argumentation](src/kataliarc/templates/skills/toulmin/SKILL.md), and [evaluation and review](src/kataliarc/templates/skills/walton/SKILL.md).
+- [Architecture decision process](src/kataliarc/resources/metamodel/process.md), [domain model](src/kataliarc/resources/metamodel/domain.json), [Walton rubric](src/kataliarc/resources/metamodel/walton-rubric.json), and [evaluation schema](schemas/evaluation.schema.json).
+
 ## Commands
 
 ```sh
@@ -110,6 +118,7 @@ kataliarc pohl elicit
 kataliarc pohl prioritize
 kataliarc toulmin design
 kataliarc walton evaluate
+kataliarc walton evaluate --finalize
 kataliarc walton review
 kataliarc walton decide
 kataliarc decide --help
@@ -207,7 +216,15 @@ The engine consolidates scenario judgments for each criterion using the same pri
 
 Run `kataliarc walton evaluate` to invoke Walton and compute the results. For existing valid judgments, `kataliarc walton evaluate --finalize` computes results without a model call. `kataliarc walton review` revalidates and recalculates before persisting a proposed ADR. `kataliarc walton decide` uses the saved actions to describe trade-offs and remaining decisions for the authorized decision maker.
 
-The evaluation command applies bounded Toulmin refinements only for `MODIFICAR`. Configure `{"walton": {"max_iterations": 2}}` in `.kataliarc/config.json` (default 3, maximum 5). Recurring requests stay explicitly unresolved when the cap is reached. In existing projects, install the managed rubric, schemas, and skill with `kataliarc update --yes`, then reevaluate current alternatives with `kataliarc walton evaluate`. Historical ADRs retain their version and source records.
+Each criterion records `value`, `justification`, `evidence_refs`, and `assumptions`. Use `adjustment` for a concrete fix and `pending_information` for missing evidence or an unresolved objection that blocks judgment. An impediment reference takes the form `{"scenario_id": "QS-01"}` or `{"constraint_id": "CON-01"}`. The CLI records the calculated action and rule under `alternative_results` and summarizes them in `evaluation.md`.
+
+The evaluation command applies bounded Toulmin refinements only for `MODIFICAR`. Configure `{"walton": {"max_iterations": 2}}` in `.kataliarc/config.json` (default 3, maximum 5). Recurring requests stay explicitly unresolved when the cap is reached.
+
+#### Upgrade an existing project
+
+1. Reinstall KatalIArc using its existing installation method so pip resolves the validation dependency.
+2. Run `kataliarc update --dry-run` from the initialized project, inspect the proposed changes, and apply them with `kataliarc update --yes`. Add `--global` for a user-level installation.
+3. Reevaluate records from the previous rubric with `kataliarc walton evaluate`. Previous judgments enter the assessment history when replaced. For records already using the unified rubric, complete any missing `impediment_ref` values before running `kataliarc walton evaluate --finalize`. Historical ADRs retain their versions and source records.
 
 The [complete combination example](examples/walton-combination.json) uses fictional evidence to show how horizontal scaling and caching interact. It records two scenario assessments, a risk, a justified no risk, a sensitivity point, a trade-off, and Walton's objections. To reproduce it in an initialized project, copy its `context`, `utility_tree`, `tactics`, and `evaluation` objects to the corresponding files under `.kataliarc/`, then run `kataliarc walton evaluate --finalize`. The cold rollout requires an adjustment (C4), so the output is `ALT-003 MODIFICAR (R3)`.
 
@@ -226,7 +243,7 @@ kataliarc toulmin design --repo ../service --no-rag
 
 Historical ADRs provide context, not proof that a past decision fits the current repository. The prepared input preserves source IDs and marks transfer to the current design as an inference/hypothesis. Retrieved content is treated as untrusted data. The provider is instructed to include all six Toulmin elements, including backing, and to leave final evaluation and decision to later phases.
 
-`doctor` checks the provider, resources, JSON files, schemas, metamodel, and permissions without writing files. It also reports any knowledge paths present in older configurations. `--json` produces output without a banner or ANSI formatting. `update` only updates local resources listed in `.kataliarc/managed-files.json`; it reports conflicts, preserves conflicting files, and creates a `.kataliarc-backup` copy when updating a previously intact resource. `--dry-run` makes no changes; `--yes` enables non-interactive updates. KatalIArc does not download files from GitHub.
+`doctor` checks the provider, resources, JSON files, schemas, metamodel, and permissions without writing files. It also reports knowledge paths present in older configurations. `--json` produces output without a banner or ANSI formatting. `update` uses the installed package templates to refresh managed resources and can add missing provider integration files. It compares existing files against the hashes in `.kataliarc/managed-files.json`, preserves conflicts, and backs up intact files that it replaces. Use `--dry-run` to preview changes and `--yes` to apply them non-interactively.
 
 Architecture workflow artifacts are written to `.kataliarc/` for review. The client representative must confirm priorities. Hypotheses carry their own provenance labels. Verified compliance requires independent evidence.
 

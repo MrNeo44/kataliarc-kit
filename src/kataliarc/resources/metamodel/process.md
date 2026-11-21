@@ -37,6 +37,19 @@ This document describes the process flow shared by the methodological skills. Se
 7. Group scenario IDs by quality attribute in the utility tree. The scenario definition and priority remain canonical in `context.json`; do not duplicate them in the tree.
 8. Hand the problem, context, constraints, and confirmed or explicitly pending scenarios to Toulmin. Do not propose tactics or alternatives as part of Pohl's role.
 
+## Walton evaluation and follow-up
+
+Evaluate each complete alternative against the relevant scenarios. Retain the full tactic combination and assess its interactions. Record one judgment per criterion with its justification, evidence references, and assumptions. The CLI consolidates the judgments per alternative and records the first matching rule.
+
+| Rule | Judgment | Action and follow-up |
+|---|---|---|
+| R1 | `NO_CUMPLE` requires a decisive blocker supported by direct evidence. Identify it in `impediment` and link it through `impediment_ref` to the assessed scenario or a mandatory constraint. | `DESCARTAR`. Preserve the confirmed blocker and its evidence. |
+| R2 | `INCIERTO` applies when missing critical information or an unresolved objection prevents a justified judgment. | `POSPONER`. Record the open question and what would resolve it. |
+| R3 | `REQUIERE_AJUSTE` covers a correctable deficiency, an incomplete combination, or a risk with a concrete mitigation. | `MODIFICAR`. Request a bounded refinement from Toulmin. |
+| R4 | All six criteria are `CUMPLE`. Each is sufficiently justified to continue. | `MANTENER`. Keep the alternative available for human comparison. |
+
+ATAM-inspired risks remain findings in the assessment. Experimental verification requires its own evidence. `kataliarc walton evaluate --finalize` validates recorded judgments and calculates the outcome locally. Critical review may revise the judgments with evidence. The ADR preserves the calculated rule, evidence, and open objections for the authorized decision maker.
+
 ## Feedback and stop conditions
 
 - During design, evaluation, or review, newly discovered requirements or changed assumptions return to Pohl for clarification and scenario updates.
