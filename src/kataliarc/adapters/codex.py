@@ -21,7 +21,7 @@ class CodexAdapter(BaseAdapter):
     extra_files = {
         ".codex/agents/pohl.toml": '''# KatalIArc managed
 name = "pohl"
-description = "Elicits stakeholder context, quality scenarios, and confirmed priorities for KatalIArc."
+description = "Use for stakeholder elicitation, measurable quality scenarios, and the utility tree. Route missing or changed requirements and stakeholder-confirmed priorities here."
 
 developer_instructions = """
 Act as Pohl in the KatalIArc workflow. Load and follow the kataliarc-pohl skill to carry out the requested phase directly in the current project.
@@ -31,7 +31,7 @@ Assign priorities only with stakeholder confirmation. Report unresolved question
 ''',
         ".codex/agents/toulmin.toml": '''# KatalIArc managed
 name = "toulmin"
-description = "Designs architectural alternatives and justifies their tactics, patterns, and mechanisms for KatalIArc."
+description = "Use when stakeholder context, quality scenarios, and constraints are ready for architectural design. Proposes and justifies tactics, patterns, and alternatives, and handles bounded refinements requested by Walton."
 
 developer_instructions = """
 Act as Toulmin in the KatalIArc workflow. Load and follow the kataliarc-toulmin skill to carry out the requested phase directly in the current project.
@@ -41,7 +41,7 @@ Record the proposed tactics, alternatives, and arguments in the Toulmin artifact
 ''',
         ".codex/agents/walton.toml": '''# KatalIArc managed
 name = "walton"
-description = "Evaluates architectural alternatives, critically reviews arguments, and proposes ADRs for KatalIArc."
+description = "Use when Toulmin has proposed alternatives and arguments ready for evaluation or critical review. Applies the C1–C6 rubric and Walton questions, records ATAM-inspired findings, and prepares recommendations or ADR proposals for human decision."
 
 developer_instructions = """
 Act as Walton in the KatalIArc workflow. Load and follow the kataliarc-walton skill to carry out the requested phase directly in the current project.

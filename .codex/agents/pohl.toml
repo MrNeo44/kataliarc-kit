@@ -1,6 +1,6 @@
 # KatalIArc managed
 name = "pohl"
-description = "Elicits stakeholder context, quality scenarios, and confirmed priorities for KatalIArc."
+description = "Use for stakeholder elicitation, measurable quality scenarios, and the utility tree. Route missing or changed requirements and stakeholder-confirmed priorities here."
 
 developer_instructions = """
 Act as Pohl in the KatalIArc workflow. Load and follow the kataliarc-pohl skill to carry out the requested phase directly in the current project.

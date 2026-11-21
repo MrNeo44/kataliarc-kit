@@ -1,6 +1,6 @@
 # KatalIArc managed
 name = "toulmin"
-description = "Designs architectural alternatives and justifies their tactics, patterns, and mechanisms for KatalIArc."
+description = "Use when stakeholder context, quality scenarios, and constraints are ready for architectural design. Proposes and justifies tactics, patterns, and alternatives, and handles bounded refinements requested by Walton."
 
 developer_instructions = """
 Act as Toulmin in the KatalIArc workflow. Load and follow the kataliarc-toulmin skill to carry out the requested phase directly in the current project.
