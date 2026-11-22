@@ -1,9 +1,11 @@
+from collections import Counter
 import json
 from pathlib import Path
+import re
 
 from kataliarc import cli
 from kataliarc.rag import OpenAIVectorStoreRetriever
-from kataliarc.toulmin import build_toulmin_input
+from kataliarc.toulmin import QUALITY_MODEL, build_toulmin_input, canonical_attribute, load_tactic_catalog, matching_tactics
 
 
 class FakeRetriever:
@@ -45,6 +47,97 @@ def test_toulmin_retrieves_by_scenario_and_candidate_tactic_and_preserves_proven
     assert evidence["transfer_to_current_repository_status"] == "inferencia/hipótesis"
     assert len(evidence["retrieved_via"]) > 1
     assert result["safety"]["rag_store_was_modified"] is False
+
+
+def test_toulmin_matches_catalog_entry_for_an_additional_quality_attribute(tmp_path):
+    artifacts = tmp_path / ".kataliarc"
+    artifacts.mkdir()
+    (artifacts / "context.json").write_text(json.dumps({
+        "quality_scenarios": [
+            {"id": "S1", "quality_attribute": "Observabilidad operativa", "description": "Trace a reservation"},
+            {"id": "S2", "quality_attribute": "Disponibilidad", "description": "Recover after a fault"},
+        ],
+    }), encoding="utf-8")
+    entry = {
+        "id": "TEST-OBSERVABILITY",
+        "name": "Trace reservation activity",
+        "target_attributes": ["observabilidad operativa"],
+        "mechanism": "Propagate and record a reservation correlation identifier.",
+        "conditions": ["The relevant components propagate the identifier."],
+        "limitations": ["A partial trace can omit downstream effects."],
+        "source_refs": ["test:validated-entry"],
+    }
+    catalog_path = tmp_path / "catalog.json"
+    catalog_path.write_text(json.dumps({"source": {}, "tactics": [entry]}), encoding="utf-8")
+
+    result = build_toulmin_input(artifacts, tmp_path, {"rag": {"enabled": False}}, catalog_path=catalog_path)
+
+    assert result["tactic_catalog"]["candidate_tactics_by_scenario"] == {"S1": [entry], "S2": []}
+
+
+def test_iso_25010_attributes_are_recognized_even_when_no_tactics_apply():
+    characteristics = QUALITY_MODEL["characteristics"]
+    assert len(characteristics) == 9
+    assert sum(len(item["subcharacteristics"]) for item in characteristics) == 40
+    for characteristic in characteristics:
+        for attribute in (characteristic, *characteristic["subcharacteristics"]):
+            for label in (attribute["id"], *attribute["aliases"]):
+                assert canonical_attribute(label) == attribute["id"]
+
+    catalog = load_tactic_catalog()
+    assert matching_tactics({"quality_attribute": "Adecuación funcional"}, catalog) == []
+    assert matching_tactics({"quality_attribute": "Participación del usuario"}, catalog) == []
+    confidentiality = {item["id"] for item in matching_tactics({"quality_attribute": "Confidencialidad"}, catalog)}
+    assert "SEC-ENCRYPT-DATA" in confidentiality
+    assert "SEC-DETECT-DENIAL" not in confidentiality
+    maintainability = {item["id"] for item in matching_tactics({"quality_attribute": "Mantenibilidad"}, catalog)}
+    assert {"MOD-SPLIT-MODULE", "TEST-RECORD-REPLAY"} <= maintainability
+    safety = {item["id"] for item in matching_tactics({"quality_attribute": "Seguridad funcional"}, catalog)}
+    assert "SAFE-INTERLOCK" in safety
+    assert "SEC-AUTHENTICATE" not in safety
+    consistency = {item["id"] for item in matching_tactics({"quality_attribute": "Consistencia"}, catalog)}
+    assert "AVAIL-TRANSACTIONS" in consistency
+
+
+def test_bass_catalog_covers_tactic_figures_and_resolves_attributes():
+    tactics = load_tactic_catalog()["tactics"]
+    assert len({tactic["id"] for tactic in tactics}) == len(tactics)
+    counts = Counter()
+    for tactic in tactics:
+        assert all(canonical_attribute(attribute) for attribute in tactic["target_attributes"])
+        for reference in tactic["source_refs"]:
+            figure = re.search(r"fig\. (\d+\.\d+)", reference)
+            if figure:
+                counts[figure[1]] += 1
+    assert counts == {
+        "4.3": 26, "5.3": 6, "6.3": 12, "7.3": 10, "8.3": 15,
+        "9.3": 12, "10.3": 18, "11.3": 18, "12.4": 8, "13.3": 7,
+    }
+
+
+def test_toulmin_searches_scenarios_without_catalog_tactics_before_tactic_queries(tmp_path):
+    artifacts = tmp_path / ".kataliarc"
+    artifacts.mkdir()
+    (artifacts / "context.json").write_text(json.dumps({
+        "quality_scenarios": [
+            {"id": "S1", "quality_attribute": "Disponibilidad", "description": "Recover after a fault"},
+            {"id": "S2", "quality_attribute": "Adecuación funcional", "description": "Cover a required task"},
+        ],
+    }), encoding="utf-8")
+
+    result = build_toulmin_input(
+        artifacts,
+        tmp_path,
+        {"rag": {"enabled": True, "vector_store_id": "vs-test", "max_queries": 2}},
+        retriever=FakeRetriever(),
+    )
+
+    assert result["tactic_catalog"]["candidate_tactics_by_scenario"]["S1"]
+    assert result["tactic_catalog"]["candidate_tactics_by_scenario"]["S2"] == []
+    assert [(query["scenario_id"], query["tactic_id"]) for query in result["rag"]["queries"]] == [
+        ("S1", None),
+        ("S2", None),
+    ]
 
 
 def test_utility_tree_references_context_scenarios_without_copying_them(tmp_path):

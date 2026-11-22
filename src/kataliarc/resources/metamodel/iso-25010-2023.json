@@ -1,0 +1,107 @@
+{
+  "id": "ISO/IEC 25010:2023",
+  "source": "https://www.iso.org/standard/78176.html",
+  "characteristics": [
+    {
+      "id": "functional-suitability",
+      "aliases": ["adecuación funcional", "idoneidad funcional"],
+      "subcharacteristics": [
+        {"id": "functional-completeness", "aliases": ["completitud funcional"]},
+        {"id": "functional-correctness", "aliases": ["corrección funcional"]},
+        {"id": "functional-appropriateness", "aliases": ["pertinencia funcional", "adecuación de las funciones"]}
+      ]
+    },
+    {
+      "id": "performance-efficiency",
+      "aliases": ["eficiencia de desempeño", "eficiencia del rendimiento", "performance", "rendimiento", "desempeño"],
+      "subcharacteristics": [
+        {"id": "time-behaviour", "aliases": ["time behavior", "comportamiento temporal", "latency", "latencia", "throughput"]},
+        {"id": "resource-utilization", "aliases": ["resource utilisation", "utilización de recursos", "uso de recursos"]},
+        {"id": "capacity", "aliases": ["capacidad"]}
+      ]
+    },
+    {
+      "id": "compatibility",
+      "aliases": ["compatibilidad"],
+      "subcharacteristics": [
+        {"id": "co-existence", "aliases": ["coexistence", "coexistencia"]},
+        {"id": "interoperability", "aliases": ["interoperabilidad"]}
+      ]
+    },
+    {
+      "id": "interaction-capability",
+      "aliases": ["capacidad de interacción"],
+      "subcharacteristics": [
+        {"id": "appropriateness-recognizability", "aliases": ["reconocimiento de la adecuación"]},
+        {"id": "learnability", "aliases": ["capacidad de aprendizaje", "facilidad de aprendizaje"]},
+        {"id": "operability", "aliases": ["operabilidad"]},
+        {"id": "user-error-protection", "aliases": ["protección frente a errores del usuario", "protección contra errores del usuario"]},
+        {"id": "user-engagement", "aliases": ["implicación del usuario", "participación del usuario"]},
+        {"id": "inclusivity", "aliases": ["inclusividad"]},
+        {"id": "user-assistance", "aliases": ["asistencia al usuario"]},
+        {"id": "self-descriptiveness", "aliases": ["autodescripción", "capacidad autodescriptiva"]}
+      ]
+    },
+    {
+      "id": "reliability",
+      "aliases": ["fiabilidad", "confiabilidad"],
+      "subcharacteristics": [
+        {"id": "faultlessness", "aliases": ["ausencia de fallos", "ausencia de fallas", "maturity", "madurez"]},
+        {"id": "availability", "aliases": ["disponibilidad", "resilience", "resiliencia"]},
+        {"id": "fault-tolerance", "aliases": ["tolerancia a fallos", "tolerancia a fallas"]},
+        {"id": "recoverability", "aliases": ["recuperabilidad", "capacidad de recuperación"]}
+      ]
+    },
+    {
+      "id": "security",
+      "aliases": ["seguridad", "seguridad de la información"],
+      "subcharacteristics": [
+        {"id": "confidentiality", "aliases": ["confidencialidad"]},
+        {"id": "integrity", "aliases": ["integridad"]},
+        {"id": "non-repudiation", "aliases": ["nonrepudiation", "no repudio"]},
+        {"id": "accountability", "aliases": ["responsabilidad", "rendición de cuentas"]},
+        {"id": "authenticity", "aliases": ["autenticidad"]},
+        {"id": "resistance", "aliases": ["resistencia", "resistencia a ataques"]}
+      ]
+    },
+    {
+      "id": "maintainability",
+      "aliases": ["mantenibilidad"],
+      "subcharacteristics": [
+        {"id": "modularity", "aliases": ["modularidad"]},
+        {"id": "reusability", "aliases": ["reusabilidad", "reutilización"]},
+        {"id": "analysability", "aliases": ["analyzability", "analizabilidad", "capacidad de análisis"]},
+        {"id": "modifiability", "aliases": ["modificabilidad", "evolvability", "evolucionabilidad"]},
+        {"id": "testability", "aliases": ["capacidad de prueba", "facilidad de prueba", "testeabilidad"]}
+      ]
+    },
+    {
+      "id": "flexibility",
+      "aliases": ["flexibilidad", "portability", "portabilidad"],
+      "subcharacteristics": [
+        {"id": "adaptability", "aliases": ["adaptabilidad"]},
+        {"id": "scalability", "aliases": ["escalabilidad"]},
+        {"id": "installability", "aliases": ["instalabilidad", "facilidad de instalación"]},
+        {"id": "replaceability", "aliases": ["reemplazabilidad", "capacidad de sustitución"]}
+      ]
+    },
+    {
+      "id": "safety",
+      "aliases": ["seguridad funcional", "seguridad operacional", "seguridad de funcionamiento"],
+      "subcharacteristics": [
+        {"id": "operational-constraint", "aliases": ["restricción operativa", "restricción operacional"]},
+        {"id": "risk-identification", "aliases": ["identificación de riesgos"]},
+        {"id": "fail-safe", "aliases": ["fallo seguro", "falla segura"]},
+        {"id": "hazard-warning", "aliases": ["advertencia de peligro", "aviso de peligro"]},
+        {"id": "safe-integration", "aliases": ["integración segura"]}
+      ]
+    }
+  ],
+  "additional_attributes": {
+    "consistency": ["consistencia"],
+    "deployability": ["desplegabilidad", "facilidad de despliegue"],
+    "energy-efficiency": ["eficiencia energética"],
+    "integrability": ["integrabilidad", "facilidad de integración"],
+    "usability": ["usabilidad"]
+  }
+}

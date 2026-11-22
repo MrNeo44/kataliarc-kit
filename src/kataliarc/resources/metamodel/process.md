@@ -30,7 +30,7 @@ This document describes the process flow shared by the methodological skills. Se
 
 1. Read existing project context and identify its sources. Ask who supplied important statements when provenance is unclear.
 2. Establish the business problem, goals, system boundary, team capabilities, technology environment, requirements, and constraints. Use the corresponding entities in `domain.json`; do not force unknown fields to invented values.
-3. Derive candidate architectural drivers and quality attributes from the stated goals, requirements, and constraints. Keep stakeholder statements distinct from agent interpretations.
+3. Derive candidate architectural drivers and quality attributes from the stated goals, requirements, and constraints. Use [the ISO/IEC 25010 product quality model](iso-25010-2023.json) as a reference for standard names, and preserve project-specific attributes. Keep stakeholder statements distinct from agent interpretations.
 4. Elicit quality scenarios using stimulus, environment, response, response measure, acceptance criteria, and known context. Record missing information, assumptions, provenance, and evidence status.
 5. Identify whether information critical to safe design is missing. Ask targeted questions where possible. If unanswered, record the gap and its impact; do not silently fill it.
 6. Ask the client representative to confirm scenario priorities. Until confirmed, leave priority pending/unknown. Keep mandatory constraints separate from priority.

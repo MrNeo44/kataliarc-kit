@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import unicodedata
 from typing import Protocol
 
 from .rag import OpenAIVectorStoreRetriever, RAGError, configured_value, load_rag_settings
@@ -15,24 +16,38 @@ class Retriever(Protocol):
     def search(self, query: str, *, max_results: int = 10) -> list[dict]: ...
 
 
-QUALITY_ALIASES = {
-    "performance": {"performance", "rendimiento", "desempeno", "latency", "latencia", "throughput", "capacidad"},
-    "availability": {"availability", "disponibilidad", "resilience", "resiliencia", "fault tolerance", "tolerancia a fallos"},
-    "modifiability": {"modifiability", "modificabilidad", "maintainability", "mantenibilidad", "evolvability", "evolucionabilidad"},
-    "security": {"security", "seguridad", "confidentiality", "confidencialidad", "integrity", "integridad"},
+def _normal(value: object) -> str:
+    text = unicodedata.normalize("NFD", str(value or "").casefold())
+    text = "".join(char for char in text if not unicodedata.combining(char))
+    return re.sub(r"[\s_-]+", " ", text).strip()
+
+
+QUALITY_MODEL_PATH = Path(__file__).resolve().parent / "resources" / "metamodel" / "iso-25010-2023.json"
+QUALITY_MODEL = json.loads(QUALITY_MODEL_PATH.read_text(encoding="utf-8"))
+QUALITY_SUBCHARACTERISTICS = {
+    item["id"]: {child["id"] for child in item["subcharacteristics"]}
+    for item in QUALITY_MODEL["characteristics"]
 }
 
 
-def _normal(value: object) -> str:
-    return re.sub(r"\s+", " ", str(value or "").strip().lower())
+def _quality_aliases(model: dict) -> dict[str, str]:
+    aliases = {}
+    for characteristic in model["characteristics"]:
+        for item in (characteristic, *characteristic["subcharacteristics"]):
+            aliases[item["id"]] = item["aliases"]
+    aliases.update(model["additional_attributes"])
+    return {
+        _normal(label): attribute
+        for attribute, names in aliases.items()
+        for label in (attribute, *names)
+    }
+
+
+QUALITY_ALIASES = _quality_aliases(QUALITY_MODEL)
 
 
 def canonical_attribute(value: object) -> str | None:
-    text = _normal(value)
-    for canonical, aliases in QUALITY_ALIASES.items():
-        if text in aliases:
-            return canonical
-    return text if text in QUALITY_ALIASES else None
+    return QUALITY_ALIASES.get(_normal(value))
 
 
 def load_tactic_catalog(path: Path | None = None) -> dict:
@@ -117,10 +132,19 @@ def collect_scenarios(artifacts_dir: Path) -> tuple[list[dict], list[dict], list
 
 
 def matching_tactics(scenario: dict, catalog: dict) -> list[dict]:
-    attribute = scenario.get("canonical_quality_attribute") or canonical_attribute(scenario.get("quality_attribute"))
+    value = scenario.get("canonical_quality_attribute") or scenario.get("quality_attribute")
+    attribute = canonical_attribute(value) or _normal(value)
     if not attribute:
         return []
-    return [tactic for tactic in catalog["tactics"] if attribute in tactic.get("target_attributes", [])]
+    targets = QUALITY_SUBCHARACTERISTICS.get(attribute, set()) | {attribute}
+    return [
+        tactic
+        for tactic in catalog["tactics"]
+        if any(
+            (canonical_attribute(target) or _normal(target)) in targets
+            for target in tactic.get("target_attributes", [])
+        )
+    ]
 
 
 def _scenario_query(scenario: dict, constraints: list) -> str:
@@ -228,14 +252,16 @@ def build_toulmin_input(
                         retrieval["warnings"].append(str(exc))
             if active_retriever is not None:
                 retrieval["status"] = "retrieved"
-                query_specs = []
-                for scenario in scenarios:
-                    query_specs.append({
+                query_specs = [
+                    {
                         "route": "scenario_to_adr_to_mechanism_to_tactic",
                         "scenario_id": scenario["id"],
                         "tactic_id": None,
                         "query": _scenario_query(scenario, constraints),
-                    })
+                    }
+                    for scenario in scenarios
+                ]
+                for scenario in scenarios:
                     for tactic in candidates.get(scenario["id"], []):
                         query_specs.append({
                             "route": "scenario_to_tactic_to_adr",

@@ -118,7 +118,7 @@ def doctor(project: Path, *, as_json: bool = False) -> int:
 
 
 def update(project: Path, *, dry_run: bool = False, yes: bool = False) -> int:
-    """Refresh only files listed in the KatalIArc manifest; preserve edits."""
+    """Install bundled resources and refresh previously managed files while preserving edits."""
     project = project.resolve()
     data = project / ".kataliarc"
     try:
@@ -132,13 +132,12 @@ def update(project: Path, *, dry_run: bool = False, yes: bool = False) -> int:
         return 2
     source = Path(__file__).resolve().parent
     package_root = source / "resources"
-    candidates: dict[str, Path] = {}
-    for relative in old.get("files", {}):
-        if relative.startswith(".kataliarc/schemas/") or relative.startswith(".kataliarc/metamodel/"):
-            parts = relative.split("/")
-            candidates[relative] = package_root / parts[1] / parts[2]
-        else:
-            candidates[relative] = None
+    candidates: dict[str, Path | None] = {
+        f".kataliarc/{directory}/{resource.name}": resource
+        for directory in ("schemas", "metamodel")
+        for resource in sorted((package_root / directory).glob("*"))
+        if resource.is_file()
+    }
     # Source-backed resources map by basename for skills and use adapter definitions for instructions.
     adapter = get_adapter(agent)
     if config.get("scope") == "user":

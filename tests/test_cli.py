@@ -379,6 +379,30 @@ def test_update_updates_packaged_resources_and_backs_up(tmp_path, monkeypatch):
     assert managed.with_name("context.schema.json.kataliarc-backup").is_file()
 
 
+def test_update_installs_new_packaged_model_in_existing_project(tmp_path, capsys):
+    from kataliarc.management import update
+
+    assert cli.init("codex", tmp_path) == 0
+    relative = ".kataliarc/metamodel/iso-25010-2023.json"
+    model = tmp_path / relative
+    expected = model.read_bytes()
+    model.unlink()
+    manifest_path = tmp_path / ".kataliarc/managed-files.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    del manifest["files"][relative]
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    context = tmp_path / ".kataliarc/context.json"
+    original_context = context.read_bytes()
+
+    assert update(tmp_path, dry_run=True) == 0
+    assert f"UPDATE {relative}" in capsys.readouterr().out
+    assert not model.exists()
+    assert update(tmp_path, yes=True) == 0
+    assert model.read_bytes() == expected
+    assert json.loads(manifest_path.read_text(encoding="utf-8"))["files"][relative] == hashlib.sha256(expected).hexdigest()
+    assert context.read_bytes() == original_context
+
+
 def test_update_removes_unmodified_obsolete_kazman_skill(tmp_path, monkeypatch, capsys):
     from kataliarc.management import update
     monkeypatch.chdir(tmp_path)

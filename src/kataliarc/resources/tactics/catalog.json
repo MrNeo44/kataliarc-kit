@@ -1,119 +1,2147 @@
 {
   "schema_version": "1.0",
-  "title": "KatalIArc seed catalog of architectural tactics",
+  "title": "KatalIArc catalog of architectural tactics",
   "source": {
     "citation": "Bass, Clements, and Kazman (2021), Software Architecture in Practice, 4th edition.",
-    "verification_status": "bibliographic source identified; tactic-to-page mapping requires local verification",
-    "use": "Candidate generation only; the catalog is not evidence that a tactic fits or will satisfy a scenario."
+    "url": "https://www.informit.com/store/software-architecture-in-practice-9780136886099",
+    "scope": "Tactic entries in the ten quality-attribute taxonomies in chapters 4–13. Shared decisions retain references to each applicable figure. Realizations are described within the tactic.",
+    "mapping": "KatalIArc relates the design decisions to ISO/IEC 25010:2023 characteristics or subcharacteristics where their effects are relevant, and preserves additional quality attributes.",
+    "use": "Use entries as candidates. Establish applicability and evidence for the current scenario."
   },
   "tactics": [
     {
-      "id": "PERF-REDUCE-DEMAND",
-      "name": "Reduce resource demand",
-      "target_attributes": ["performance"],
-      "mechanism": "Reduce the amount or frequency of work required to produce a response, for example by filtering, aggregating, or reducing repeated computation.",
-      "conditions": ["A demand source or repeated work can be identified."],
-      "limitations": ["The actual bottleneck and workload are not established without measurements."],
-      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+      "id": "AVAIL-CONDITION-MONITORING",
+      "name": "Observe conditions that indicate faults",
+      "target_attributes": [
+        "availability",
+        "safety",
+        "risk-identification"
+      ],
+      "mechanism": "Check selected device or process states against expected operating conditions.",
+      "conditions": [
+        "Observable conditions are tied to failure or hazard analysis."
+      ],
+      "limitations": [
+        "Monitoring can consume resources and miss uninstrumented conditions."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
     },
     {
-      "id": "PERF-MANAGE-RESOURCES",
-      "name": "Manage resources",
-      "target_attributes": ["performance"],
-      "mechanism": "Allocate, schedule, or coordinate constrained resources so competing work uses them effectively.",
-      "conditions": ["The relevant resource and contention mechanism are known."],
-      "limitations": ["Scheduling or pooling can add coordination overhead and does not create capacity."],
-      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+      "id": "AVAIL-DETECT-EXCEPTIONS",
+      "name": "Detect abnormal execution",
+      "target_attributes": [
+        "availability"
+      ],
+      "mechanism": "Make erroneous states observable through exceptions, deadline checks, or checks on parameters.",
+      "conditions": [
+        "The execution environment exposes meaningful error signals."
+      ],
+      "limitations": [
+        "Detection needs a handler or a recovery policy."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-ESCALATING-RESTART",
+      "name": "Increase restart scope when recovery fails",
+      "target_attributes": [
+        "availability",
+        "recoverability"
+      ],
+      "mechanism": "Start with a small restart and broaden it when the fault persists.",
+      "conditions": [
+        "Components have defined restart boundaries and preserve needed state."
+      ],
+      "limitations": [
+        "A broader restart raises disruption and resource contention."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-EXPAND-COMPETENCE",
+      "name": "Enable independent operation across more conditions",
+      "target_attributes": [
+        "availability",
+        "fault-tolerance"
+      ],
+      "mechanism": "Give a component the state or capability to handle situations previously delegated to an external dependency.",
+      "conditions": [
+        "The fallback can maintain necessary policy and consistency."
+      ],
+      "limitations": [
+        "Extra local behavior can duplicate responsibility or use old information."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-GRACEFUL-DEGRADATION",
+      "name": "Continue critical functions with reduced service",
+      "target_attributes": [
+        "availability",
+        "fault-tolerance",
+        "safety",
+        "fail-safe"
+      ],
+      "mechanism": "Shed or replace less important work through a planned degraded mode.",
+      "conditions": [
+        "Critical functions and safe degradation boundaries are agreed."
+      ],
+      "limitations": [
+        "Reduced fidelity or throughput must remain acceptable."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "AVAIL-HANDLE-EXCEPTIONS",
+      "name": "Handle exceptions at an appropriate boundary",
+      "target_attributes": [
+        "availability",
+        "recoverability"
+      ],
+      "mechanism": "Route failures to handlers that can report, mask, repair, or contain their effects.",
+      "conditions": [
+        "Error contracts identify who can handle each failure."
+      ],
+      "limitations": [
+        "Masking an unhandled condition can hide a continuing failure."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-HEALTH-MONITOR",
+      "name": "Observe component health",
+      "target_attributes": [
+        "availability"
+      ],
+      "mechanism": "Have a monitor collect health signals across components and correlate deviations.",
+      "conditions": [
+        "Components expose relevant health signals."
+      ],
+      "limitations": [
+        "A faulty or overloaded monitor can miss symptoms."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-HEARTBEAT",
+      "name": "Expect periodic liveness signals",
+      "target_attributes": [
+        "availability"
+      ],
+      "mechanism": "Have a component emit a regular signal that its monitor expects within a window.",
+      "conditions": [
+        "A monitoring process and a heartbeat interval are defined."
+      ],
+      "limitations": [
+        "Heartbeat traffic consumes resources and demonstrates liveness more readily than correctness."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-IGNORE-FAULTY-BEHAVIOR",
+      "name": "Discard inputs identified as faulty",
+      "target_attributes": [
+        "availability",
+        "fault-tolerance"
+      ],
+      "mechanism": "Detect suspect outputs or messages and exclude them from processing.",
+      "conditions": [
+        "Faulty and meaningful behavior can be distinguished."
+      ],
+      "limitations": [
+        "False classification can discard valid work."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-IN-SERVICE-UPGRADE",
+      "name": "Update software during service",
+      "target_attributes": [
+        "availability",
+        "deployability"
+      ],
+      "mechanism": "Introduce a code change by patching or migrating components while other responsibilities remain available.",
+      "conditions": [
+        "Old and new states or versions can operate safely through the transition."
+      ],
+      "limitations": [
+        "State bridges and version compatibility add complexity."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-NONSTOP-FORWARD",
+      "name": "Keep the forwarding function active during control restart",
+      "target_attributes": [
+        "availability",
+        "fault-tolerance"
+      ],
+      "mechanism": "Preserve forwarding state while a failed control element is restarted or replaced.",
+      "conditions": [
+        "Forwarding can continue independently for a bounded period."
+      ],
+      "limitations": [
+        "Topology or policy changes may make the preserved state stale."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-PREDICT-FAULTS",
+      "name": "Anticipate faults or hazards with a model",
+      "target_attributes": [
+        "availability",
+        "faultlessness",
+        "safety",
+        "risk-identification"
+      ],
+      "mechanism": "Use monitored signals and a model to detect approaching unsafe or faulty states before failure.",
+      "conditions": [
+        "A reliable signal and a validated threshold or model are available."
+      ],
+      "limitations": [
+        "Prediction error can cause missed faults and unnecessary intervention."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "AVAIL-PREVENT-EXCEPTIONS",
+      "name": "Prevent faults that would surface as exceptions",
+      "target_attributes": [
+        "availability",
+        "faultlessness"
+      ],
+      "mechanism": "Use safeguards such as range-safe abstractions, integrity checks, or resource-safe wrappers at sensitive boundaries.",
+      "conditions": [
+        "Likely error classes and the offending boundaries are known."
+      ],
+      "limitations": [
+        "Controls cover the modeled errors and can add overhead."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-REACHABILITY-PROBE",
+      "name": "Probe reachability",
+      "target_attributes": [
+        "availability"
+      ],
+      "mechanism": "Exchange a request and reply to check whether a peer or path is responding.",
+      "conditions": [
+        "A deadline distinguishes useful replies from stale replies."
+      ],
+      "limitations": [
+        "A slow path can resemble a failed peer."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-RECONFIGURATION",
+      "name": "Reassign responsibilities after failure",
+      "target_attributes": [
+        "availability",
+        "recoverability",
+        "safety",
+        "fail-safe"
+      ],
+      "mechanism": "Change the operating configuration to use working elements in place of failed ones.",
+      "conditions": [
+        "A feasible configuration can preserve critical constraints."
+      ],
+      "limitations": [
+        "Reconfiguration may take time and can leave state inconsistent."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "AVAIL-REDUNDANT-SPARE",
+      "name": "Provision a standby able to take over",
+      "target_attributes": [
+        "availability",
+        "fault-tolerance",
+        "recoverability"
+      ],
+      "mechanism": "Keep spare capacity and transfer responsibility to it when the active element fails.",
+      "conditions": [
+        "The standby can recover the needed state and be promoted exclusively."
+      ],
+      "limitations": [
+        "Shared dependencies and stale state can defeat failover."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-REMOVE-FROM-SERVICE",
+      "name": "Withdraw a component temporarily to prevent failure",
+      "target_attributes": [
+        "availability",
+        "faultlessness"
+      ],
+      "mechanism": "Remove an element proactively for corrective or preventive maintenance before it fails.",
+      "conditions": [
+        "Other capacity can handle work and work can drain safely."
+      ],
+      "limitations": [
+        "Withdrawal diminishes capacity and can interrupt work."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-RESYNC-STATE",
+      "name": "Bring a returning component's state up to date",
+      "target_attributes": [
+        "availability",
+        "recoverability"
+      ],
+      "mechanism": "Restore or reconcile state from a current peer or recovery log before reinstatement.",
+      "conditions": [
+        "An authoritative source and a consistency rule are available."
+      ],
+      "limitations": [
+        "Large state transfers delay reentry."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-RETRY",
+      "name": "Retry transient failures",
+      "target_attributes": [
+        "availability",
+        "fault-tolerance"
+      ],
+      "mechanism": "Reattempt an operation after a recoverable failure under a bounded retry policy.",
+      "conditions": [
+        "The operation is safe to retry or effects are deduplicated."
+      ],
+      "limitations": [
+        "Retries increase load and can duplicate effects."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-ROLLBACK",
+      "name": "Restore a prior acceptable state",
+      "target_attributes": [
+        "availability",
+        "recoverability",
+        "safety",
+        "fail-safe"
+      ],
+      "mechanism": "Recover state from an earlier checkpoint suitable for resuming work or safe operation.",
+      "conditions": [
+        "An acceptable checkpoint remains available after failure."
+      ],
+      "limitations": [
+        "Work after the checkpoint can be lost and external effects may need reconciliation."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "AVAIL-SANITY-CHECK",
+      "name": "Check results for plausibility",
+      "target_attributes": [
+        "availability",
+        "safety",
+        "risk-identification"
+      ],
+      "mechanism": "Check values at a boundary against ranges and relationships that are feasible in context.",
+      "conditions": [
+        "The valid relationships and ranges are known."
+      ],
+      "limitations": [
+        "A wrong result may still appear plausible."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "AVAIL-SELF-TEST",
+      "name": "Have components exercise their own health checks",
+      "target_attributes": [
+        "availability"
+      ],
+      "mechanism": "Run diagnostic operations to distinguish functioning states from failure states.",
+      "conditions": [
+        "Tests can exercise the intended failure modes."
+      ],
+      "limitations": [
+        "Self-tests can add load and may not cover the fault."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-SHADOW",
+      "name": "Observe a repaired element before reinstatement",
+      "target_attributes": [
+        "availability",
+        "recoverability"
+      ],
+      "mechanism": "Feed the recovered element representative inputs while withholding its authority to affect live results.",
+      "conditions": [
+        "Output can be compared before authority is transferred."
+      ],
+      "limitations": [
+        "The observation window cannot expose every fault."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-TIMESTAMP",
+      "name": "Track timing or order of events",
+      "target_attributes": [
+        "availability",
+        "safety",
+        "risk-identification"
+      ],
+      "mechanism": "Annotate events with timing or sequence information and detect unexpected delays or ordering.",
+      "conditions": [
+        "The ordering and clock assumptions are explicit."
+      ],
+      "limitations": [
+        "Clock skew and retransmission can produce ambiguous results."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "AVAIL-TRANSACTIONS",
+      "name": "Use transactional change boundaries",
+      "target_attributes": [
+        "availability",
+        "faultlessness",
+        "consistency"
+      ],
+      "mechanism": "Commit related state changes atomically with isolation appropriate to the invariant.",
+      "conditions": [
+        "The data store covers the required changes and enforces the intended isolation."
+      ],
+      "limitations": [
+        "External side effects or failover durability require separate guarantees."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "AVAIL-VOTING",
+      "name": "Choose an outcome by voting across replicas",
+      "target_attributes": [
+        "availability",
+        "fault-tolerance"
+      ],
+      "mechanism": "Compare results from redundant elements and accept an outcome using a defined voting policy.",
+      "conditions": [
+        "Independent results and a decision rule can be obtained."
+      ],
+      "limitations": [
+        "Common-mode failures degrade the value of agreement."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §4.2, fig. 4.3 (p. 56)"
+      ]
+    },
+    {
+      "id": "DEPLOY-BUNDLE-DEPENDENCIES",
+      "name": "Deliver required runtime dependencies together",
+      "target_attributes": [
+        "deployability",
+        "installability"
+      ],
+      "mechanism": "Bundle or pin the runtime dependencies expected by deployable artifacts.",
+      "conditions": [
+        "The platform supports repeatable dependency packaging."
+      ],
+      "limitations": [
+        "Larger artifacts and stale bundled dependencies increase maintenance."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §5.4, fig. 5.3 (p. 78)"
+      ]
+    },
+    {
+      "id": "DEPLOY-FEATURE-SWITCHES",
+      "name": "Control feature activation separately from release",
+      "target_attributes": [
+        "deployability",
+        "adaptability"
+      ],
+      "mechanism": "Use configuration to turn deployed behavior on or off without replacing the release.",
+      "conditions": [
+        "Feature boundaries and configuration ownership are defined."
+      ],
+      "limitations": [
+        "Combinations of switches increase test and support effort."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §5.4, fig. 5.3 (p. 78)"
+      ]
+    },
+    {
+      "id": "DEPLOY-MIXED-VERSIONS",
+      "name": "Support interactions among coexisting versions",
+      "target_attributes": [
+        "deployability",
+        "replaceability",
+        "interoperability"
+      ],
+      "mechanism": "Control version negotiation or compatibility so services can interact while rollout is in progress.",
+      "conditions": [
+        "Contracts and compatible version ranges are known."
+      ],
+      "limitations": [
+        "Supporting versions concurrently prolongs complexity."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §5.4, fig. 5.3 (p. 78)"
+      ]
+    },
+    {
+      "id": "DEPLOY-REVERT-RELEASE",
+      "name": "Restore a previously deployed release",
+      "target_attributes": [
+        "deployability",
+        "replaceability"
+      ],
+      "mechanism": "Retain a working version and a means to redirect or reinstall it when the new version fails.",
+      "conditions": [
+        "Persistent state and interfaces remain compatible with the rollback path."
+      ],
+      "limitations": [
+        "An irreversible migration can make a release rollback unsafe."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §5.4, fig. 5.3 (p. 78)"
+      ]
+    },
+    {
+      "id": "DEPLOY-SCRIPT-STEPS",
+      "name": "Automate deployment steps",
+      "target_attributes": [
+        "deployability",
+        "installability"
+      ],
+      "mechanism": "Encode repeatable installation and deployment operations in scripts.",
+      "conditions": [
+        "Deployment inputs, dependencies, and failure handling are defined."
+      ],
+      "limitations": [
+        "A faulty script can repeat an error across many targets."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §5.4, fig. 5.3 (p. 78)"
+      ]
+    },
+    {
+      "id": "DEPLOY-STAGE-ROLLOUT",
+      "name": "Release in controlled stages",
+      "target_attributes": [
+        "deployability",
+        "replaceability"
+      ],
+      "mechanism": "Roll out to a limited group first and increase coverage as observations justify it.",
+      "conditions": [
+        "Traffic can be assigned to rollout groups and health can be checked."
+      ],
+      "limitations": [
+        "Multiple active versions complicate support and testing."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §5.4, fig. 5.3 (p. 78)"
+      ]
+    },
+    {
+      "id": "ENERGY-CLASSIFY-DYNAMIC",
+      "name": "Update resource energy profiles during operation",
+      "target_attributes": [
+        "energy-efficiency",
+        "resource-utilization"
+      ],
+      "mechanism": "Infer or refine energy estimates from recent telemetry and workload behavior.",
+      "conditions": [
+        "Representative counters or samples can be captured."
+      ],
+      "limitations": [
+        "Models can drift and instrumentation has a cost."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §6.2, fig. 6.3 (p. 93)"
+      ]
+    },
+    {
+      "id": "ENERGY-CLASSIFY-STATIC",
+      "name": "Estimate energy use from resource profiles",
+      "target_attributes": [
+        "energy-efficiency",
+        "resource-utilization"
+      ],
+      "mechanism": "Associate resources with documented consumption estimates for operating modes.",
+      "conditions": [
+        "Resource modes and indicative power values are known."
+      ],
+      "limitations": [
+        "Static estimates may miss workload-dependent variation."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §6.2, fig. 6.3 (p. 93)"
+      ]
+    },
+    {
+      "id": "ENERGY-DISCOVER-RESOURCE",
+      "name": "Find resources with better energy characteristics",
+      "target_attributes": [
+        "energy-efficiency",
+        "resource-utilization"
+      ],
+      "mechanism": "Look up suitable execution resources using energy or cost information.",
+      "conditions": [
+        "Comparable resource information and migration options are available."
+      ],
+      "limitations": [
+        "Moving work can erase anticipated energy savings."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §6.2, fig. 6.3 (p. 93)"
+      ]
+    },
+    {
+      "id": "ENERGY-METER-USAGE",
+      "name": "Measure energy use of resources",
+      "target_attributes": [
+        "energy-efficiency",
+        "resource-utilization"
+      ],
+      "mechanism": "Collect power or energy readings at the granularity needed for decisions.",
+      "conditions": [
+        "Instrumentation and workload attribution are available."
+      ],
+      "limitations": [
+        "Measurement can be costly and aggregate readings can hide individual consumers."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §6.2, fig. 6.3 (p. 93)"
+      ]
+    },
+    {
+      "id": "ENERGY-REDUCE-USAGE",
+      "name": "Shift resources into lower-energy states",
+      "target_attributes": [
+        "energy-efficiency",
+        "resource-utilization"
+      ],
+      "mechanism": "Idle, slow, or release resources when their full capability is unnecessary.",
+      "conditions": [
+        "Workload constraints tolerate reduced capacity or wake-up delay."
+      ],
+      "limitations": [
+        "Transitions can increase latency and affect availability."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §6.2, fig. 6.3 (p. 93)"
+      ]
+    },
+    {
+      "id": "ENERGY-SCHEDULE-RESOURCE",
+      "name": "Schedule work around energy use",
+      "target_attributes": [
+        "energy-efficiency",
+        "resource-utilization"
+      ],
+      "mechanism": "Place work at times or on resources that achieve energy goals within service limits.",
+      "conditions": [
+        "Jobs can be shifted or assigned with known deadlines."
+      ],
+      "limitations": [
+        "Scheduling can delay work or concentrate load."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §6.2, fig. 6.3 (p. 93)"
+      ]
+    },
+    {
+      "id": "INT-ABSTRACT-COMMON",
+      "name": "Extract shared capabilities behind a common contract",
+      "target_attributes": [
+        "integrability",
+        "modifiability",
+        "reusability"
+      ],
+      "mechanism": "Move similar responsibilities behind an abstraction used by several components.",
+      "conditions": [
+        "The responsibilities vary in ways the abstraction can represent."
+      ],
+      "limitations": [
+        "A shared abstraction can tie callers to changes or generalize too early."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §7.3, fig. 7.3 (p. 106)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "INT-ADAPT-INTERFACE",
+      "name": "Adapt an interface to a consuming component",
+      "target_attributes": [
+        "integrability",
+        "interoperability"
+      ],
+      "mechanism": "Tailor the interface or translate between component contracts at a boundary.",
+      "conditions": [
+        "Type, protocol, and meaning can be mapped accurately."
+      ],
+      "limitations": [
+        "Translation can lose information or hide incompatible semantics."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §7.3, fig. 7.3 (p. 106)"
+      ]
+    },
+    {
+      "id": "INT-BROKER-RESOURCES",
+      "name": "Coordinate access to shared resources",
+      "target_attributes": [
+        "integrability",
+        "co-existence"
+      ],
+      "mechanism": "Mediate how participating components acquire and release common resources.",
+      "conditions": [
+        "Ownership, quotas, and resource lifetimes are agreed."
+      ],
+      "limitations": [
+        "Resource mediation adds overhead and can bottleneck participants."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §7.3, fig. 7.3 (p. 106)"
+      ]
+    },
+    {
+      "id": "INT-CONFIGURE-BEHAVIOR",
+      "name": "Configure component behavior for integration",
+      "target_attributes": [
+        "integrability",
+        "adaptability"
+      ],
+      "mechanism": "Expose configuration points that let a component fit different collaborators.",
+      "conditions": [
+        "The necessary variations are identified and supported by the contract."
+      ],
+      "limitations": [
+        "Configuration variants increase combinations to validate."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §7.3, fig. 7.3 (p. 106)"
+      ]
+    },
+    {
+      "id": "INT-DISCOVER",
+      "name": "Find suitable components through discovery",
+      "target_attributes": [
+        "integrability",
+        "modifiability",
+        "adaptability"
+      ],
+      "mechanism": "Select a service or component at use time using published capabilities or registration.",
+      "conditions": [
+        "Capability descriptions and discovery behavior are dependable."
+      ],
+      "limitations": [
+        "Discovery adds runtime dependency and can return stale registrations."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §7.3, fig. 7.3 (p. 106)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "INT-ENCAPSULATE",
+      "name": "Expose internals through explicit interfaces",
+      "target_attributes": [
+        "integrability",
+        "modifiability",
+        "modularity"
+      ],
+      "mechanism": "Route interactions through a contract that hides component internals.",
+      "conditions": [
+        "The contract can express the interactions consumers need."
+      ],
+      "limitations": [
+        "Encapsulation creates a contract boundary that must itself evolve."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §7.3, fig. 7.3 (p. 106)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "INT-INTERMEDIATE",
+      "name": "Introduce an intermediary between dependent parts",
+      "target_attributes": [
+        "integrability",
+        "modifiability",
+        "interoperability",
+        "modularity"
+      ],
+      "mechanism": "Mediate interactions so each party can depend on a stable intermediary.",
+      "conditions": [
+        "The intermediary can preserve the required semantics."
+      ],
+      "limitations": [
+        "The intermediary introduces cost, latency, and another dependency."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §7.3, fig. 7.3 (p. 106)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "INT-ORCHESTRATE",
+      "name": "Coordinate work through an orchestration boundary",
+      "target_attributes": [
+        "integrability"
+      ],
+      "mechanism": "Centralize sequencing and invocation rules for collaborating components.",
+      "conditions": [
+        "The coordinator can observe the progress needed to schedule components."
+      ],
+      "limitations": [
+        "Coordination adds dependencies and becomes a failure or contention point."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §7.3, fig. 7.3 (p. 106)"
+      ]
+    },
+    {
+      "id": "INT-RESTRICT-PATHS",
+      "name": "Constrain which components may communicate",
+      "target_attributes": [
+        "integrability",
+        "modularity"
+      ],
+      "mechanism": "Permit connections only through defined paths that keep coupling manageable.",
+      "conditions": [
+        "Allowed dependencies and exceptions can be identified."
+      ],
+      "limitations": [
+        "Overly rigid restrictions can complicate legitimate collaborations."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §7.3, fig. 7.3 (p. 106)"
+      ]
+    },
+    {
+      "id": "INT-STANDARDIZE",
+      "name": "Use common interface standards",
+      "target_attributes": [
+        "integrability",
+        "interoperability",
+        "replaceability"
+      ],
+      "mechanism": "Align component interfaces, formats, and protocols with a shared specification.",
+      "conditions": [
+        "Candidate parts implement compatible versions of the standard."
+      ],
+      "limitations": [
+        "Conformance alone leaves domain semantics and operational behavior to verify."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §7.3, fig. 7.3 (p. 106)"
+      ]
+    },
+    {
+      "id": "MOD-ASPECTS",
+      "name": "Compose cross-cutting behavior during build",
+      "target_attributes": [
+        "modifiability",
+        "modularity"
+      ],
+      "mechanism": "Isolate cross-cutting responsibilities and compose them where needed at build time.",
+      "conditions": [
+        "The design and toolchain can express and inspect composition points."
+      ],
+      "limitations": [
+        "Implicit interception can obscure behavior and debugging."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "MOD-BUILD-PARAMETERS",
+      "name": "Parameterize variation at build time",
+      "target_attributes": [
+        "modifiability",
+        "adaptability"
+      ],
+      "mechanism": "Bind build-time options to specialize the resulting artifact.",
+      "conditions": [
+        "The variation points are known before deployment."
+      ],
+      "limitations": [
+        "Changing a bound value requires rebuild and redeployment."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "MOD-CONFIG-BINDING",
+      "name": "Choose behavior at deployment or startup",
+      "target_attributes": [
+        "modifiability",
+        "adaptability"
+      ],
+      "mechanism": "Read configuration at setup so one built artifact can operate in several environments.",
+      "conditions": [
+        "Settings are validated and available when binding occurs."
+      ],
+      "limitations": [
+        "Invalid combinations can fail initialization or alter behavior unexpectedly."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "MOD-POLYMORPHISM",
+      "name": "Dispatch through a common interface",
+      "target_attributes": [
+        "modifiability",
+        "replaceability"
+      ],
+      "mechanism": "Bind behavior to a chosen implementation behind a stable abstraction.",
+      "conditions": [
+        "Implementations honor the substitution contract."
+      ],
+      "limitations": [
+        "Variant dispatch and compatibility increase complexity."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "MOD-REDISTRIBUTE",
+      "name": "Place related responsibilities together",
+      "target_attributes": [
+        "modifiability",
+        "modularity"
+      ],
+      "mechanism": "Move misplaced work to the modules responsible for the same kinds of changes.",
+      "conditions": [
+        "Ownership and change patterns can be identified."
+      ],
+      "limitations": [
+        "Moves can change interfaces and require dependency migration."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "MOD-RESOURCE-FILES",
+      "name": "Keep changeable resources outside executable code",
+      "target_attributes": [
+        "modifiability",
+        "adaptability"
+      ],
+      "mechanism": "Load resources such as localization or templates from replaceable files.",
+      "conditions": [
+        "Resources can be validated against a stable format."
+      ],
+      "limitations": [
+        "Resources and software can drift if versioning is unmanaged."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "MOD-RESTRICT-DEPENDENCIES",
+      "name": "Constrain dependency directions and scope",
+      "target_attributes": [
+        "modifiability",
+        "modularity"
+      ],
+      "mechanism": "Define which modules can rely on one another and enforce the constraint.",
+      "conditions": [
+        "The intended module boundaries and exceptional paths are known."
+      ],
+      "limitations": [
+        "Exceptions erode the restriction and tight rules can add indirection."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "MOD-RUNTIME-PARAMETERS",
+      "name": "Interpret parameters at runtime",
+      "target_attributes": [
+        "modifiability",
+        "adaptability"
+      ],
+      "mechanism": "Allow runtime input to select among defined behaviors.",
+      "conditions": [
+        "Safe parameter ranges, privileges, and defaults are known."
+      ],
+      "limitations": [
+        "Additional variability adds validation effort and runtime overhead."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "MOD-SHARED-REPOSITORIES",
+      "name": "Bind decisions through a shared repository",
+      "target_attributes": [
+        "modifiability",
+        "adaptability"
+      ],
+      "mechanism": "Read changeable policies or data from a shared store during execution.",
+      "conditions": [
+        "Consumers can coordinate updates and understand the data contract."
+      ],
+      "limitations": [
+        "The store becomes a runtime dependency and old values may be cached."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "MOD-SPLIT-MODULE",
+      "name": "Divide a module into cohesive units",
+      "target_attributes": [
+        "modifiability",
+        "modularity"
+      ],
+      "mechanism": "Split responsibilities across boundaries that group work with similar reasons to change.",
+      "conditions": [
+        "Responsibilities can be separated with a manageable interface."
+      ],
+      "limitations": [
+        "Poor boundaries introduce new coupling and calls."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "MOD-SWAP-AT-BUILD",
+      "name": "Choose component implementations at build time",
+      "target_attributes": [
+        "modifiability",
+        "replaceability"
+      ],
+      "mechanism": "Select an alternate component when assembling the product while preserving its contract.",
+      "conditions": [
+        "Alternative components meet the stable interface and build can choose among them."
+      ],
+      "limitations": [
+        "Each implementation and assembly variant needs separate verification."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §8.2, fig. 8.3 (p. 123)"
+      ]
+    },
+    {
+      "id": "PERF-BOUND-EXECUTION",
+      "name": "Set limits on execution demand",
+      "target_attributes": [
+        "performance-efficiency",
+        "time-behaviour",
+        "energy-efficiency"
+      ],
+      "mechanism": "Use algorithms or work budgets with an enforceable upper bound on processing.",
+      "conditions": [
+        "Work can stop or degrade safely when budget runs out."
+      ],
+      "limitations": [
+        "Approximation or early termination can weaken results."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §9.2, fig. 9.3 (p. 144)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §6.2, fig. 6.3 (p. 93)"
+      ]
+    },
+    {
+      "id": "PERF-BOUND-QUEUES",
+      "name": "Limit queued work",
+      "target_attributes": [
+        "performance-efficiency",
+        "time-behaviour",
+        "capacity",
+        "resource-utilization"
+      ],
+      "mechanism": "Apply a queue bound and define behavior when available slots are exhausted.",
+      "conditions": [
+        "The allowed queue length and overload policy are known."
+      ],
+      "limitations": [
+        "The system must delay, shed, or reject work when full."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §9.2, fig. 9.3 (p. 144)"
+      ]
+    },
+    {
+      "id": "PERF-CONCURRENT-WORK",
+      "name": "Overlap or parallelize work",
+      "target_attributes": [
+        "performance-efficiency",
+        "time-behaviour",
+        "capacity"
+      ],
+      "mechanism": "Run independent work concurrently to reduce time spent waiting for resources.",
+      "conditions": [
+        "The work can be divided safely and synchronization is defined."
+      ],
+      "limitations": [
+        "Coordination and contention can eliminate the expected gain."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §9.2, fig. 9.3 (p. 144)"
+      ]
+    },
+    {
+      "id": "PERF-CONTROL-WORK",
+      "name": "Regulate incoming work",
+      "target_attributes": [
+        "performance-efficiency",
+        "time-behaviour",
+        "energy-efficiency",
+        "resource-utilization"
+      ],
+      "mechanism": "Control incoming request rates or sample streams at a rate the system can sustain.",
+      "conditions": [
+        "Arrival or sampling can be governed and fidelity requirements are known."
+      ],
+      "limitations": [
+        "Dropped samples or constrained requests can reduce utility."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §9.2, fig. 9.3 (p. 144)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §6.2, fig. 6.3 (p. 93)"
+      ]
+    },
+    {
+      "id": "PERF-COPY-DATA",
+      "name": "Keep additional copies near readers",
+      "target_attributes": [
+        "performance-efficiency",
+        "time-behaviour",
+        "capacity"
+      ],
+      "mechanism": "Cache or replicate data to relieve contention or avoid slow access paths.",
+      "conditions": [
+        "Staleness and update rules suit read requirements."
+      ],
+      "limitations": [
+        "Copies require space and can return inconsistent or outdated data."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §9.2, fig. 9.3 (p. 144)"
+      ]
+    },
+    {
+      "id": "PERF-EFFICIENT-COMPUTATION",
+      "name": "Choose more efficient computation",
+      "target_attributes": [
+        "performance-efficiency",
+        "time-behaviour",
+        "resource-utilization",
+        "energy-efficiency"
+      ],
+      "mechanism": "Select algorithms or representations that reduce the work required for an equivalent response.",
+      "conditions": [
+        "The chosen approach suits the workload sizes and distributions."
+      ],
+      "limitations": [
+        "A local efficiency gain can shift work or storage elsewhere."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §9.2, fig. 9.3 (p. 144)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §6.2, fig. 6.3 (p. 93)"
+      ]
     },
     {
       "id": "PERF-INCREASE-RESOURCES",
-      "name": "Increase resources",
-      "target_attributes": ["performance"],
-      "mechanism": "Add or increase processing, memory, network, or other capacity used by the response path.",
-      "conditions": ["The constrained resource and scaling boundary are identified."],
-      "limitations": ["Additional capacity may not help when the bottleneck is elsewhere; cost and coordination may rise."],
-      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+      "name": "Provision more processing or storage capacity",
+      "target_attributes": [
+        "performance-efficiency",
+        "capacity",
+        "scalability"
+      ],
+      "mechanism": "Increase the available amount of the resource that constrains delivery.",
+      "conditions": [
+        "Measurement identifies a resource bottleneck that can be expanded."
+      ],
+      "limitations": [
+        "Shared bottlenecks and cost can limit the gain."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §9.2, fig. 9.3 (p. 144)"
+      ]
     },
     {
-      "id": "AVAIL-DETECT-FAULTS",
-      "name": "Detect faults",
-      "target_attributes": ["availability"],
-      "mechanism": "Detect a fault using mechanisms such as heartbeat, timeout, exception, or consistency checks.",
-      "conditions": ["Fault symptoms and detection thresholds can be defined."],
-      "limitations": ["Detection alone does not restore service and may produce false positives."],
-      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+      "id": "PERF-LIMIT-RESPONSE",
+      "name": "Cap how much event work is serviced",
+      "target_attributes": [
+        "performance-efficiency",
+        "time-behaviour",
+        "energy-efficiency",
+        "resource-utilization"
+      ],
+      "mechanism": "Limit acceptance or processing when demand would exceed a service budget.",
+      "conditions": [
+        "Queuing and overflow behavior are defined."
+      ],
+      "limitations": [
+        "Some events wait longer or are dropped."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §9.2, fig. 9.3 (p. 144)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §6.2, fig. 6.3 (p. 93)"
+      ]
     },
     {
-      "id": "AVAIL-RECOVER-FAULTS",
-      "name": "Recover from faults",
-      "target_attributes": ["availability"],
-      "mechanism": "Restore service or state after a fault through recovery, reinitialization, rollback, or redundancy.",
-      "conditions": ["Recovery behavior, state ownership, and recovery objectives are understood."],
-      "limitations": ["Recovery can lose or duplicate work and depends on fault isolation and state consistency."],
-      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+      "id": "PERF-PRIORITIZE",
+      "name": "Prefer time-critical events",
+      "target_attributes": [
+        "performance-efficiency",
+        "time-behaviour",
+        "energy-efficiency"
+      ],
+      "mechanism": "Schedule work by importance and defer optional work when demand is excessive.",
+      "conditions": [
+        "Priorities reflect scenario requirements and overload behavior is agreed."
+      ],
+      "limitations": [
+        "Low-priority work can starve."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §9.2, fig. 9.3 (p. 144)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §6.2, fig. 6.3 (p. 93)"
+      ]
     },
     {
-      "id": "AVAIL-PREVENT-FAULTS",
-      "name": "Prevent faults",
-      "target_attributes": ["availability"],
-      "mechanism": "Reduce the probability that faults occur or propagate, using isolation, validation, or controlled removal from service.",
-      "conditions": ["Relevant fault sources and propagation paths are understood."],
-      "limitations": ["Prevention cannot eliminate all faults and may add operational complexity."],
-      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+      "id": "PERF-REDUCE-OVERHEAD",
+      "name": "Remove work from the common path",
+      "target_attributes": [
+        "performance-efficiency",
+        "time-behaviour",
+        "resource-utilization",
+        "energy-efficiency"
+      ],
+      "mechanism": "Reduce repeated transformations, interactions, or mediation needed to process each event.",
+      "conditions": [
+        "Tracing or analysis identifies avoidable work."
+      ],
+      "limitations": [
+        "Removing a boundary can increase coupling or reduce flexibility."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §9.2, fig. 9.3 (p. 144)",
+        "Bass, Clements, and Kazman (2021), 4th ed., §6.2, fig. 6.3 (p. 93)"
+      ]
     },
     {
-      "id": "MOD-LOCALIZE-CHANGES",
-      "name": "Localize changes",
-      "target_attributes": ["modifiability"],
-      "mechanism": "Constrain the effects of a likely change to a small set of modules or components.",
-      "conditions": ["Change sources and the responsibilities they affect are understood."],
-      "limitations": ["Boundaries can add indirection and may not match future change patterns."],
-      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+      "id": "PERF-REPLICATE-COMPUTATION",
+      "name": "Use multiple instances of a computation",
+      "target_attributes": [
+        "performance-efficiency",
+        "capacity",
+        "scalability"
+      ],
+      "mechanism": "Distribute work across instances placed where it can be processed more efficiently.",
+      "conditions": [
+        "Work is routable and the state strategy allows multiple instances."
+      ],
+      "limitations": [
+        "Routing and state consistency can become bottlenecks."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §9.2, fig. 9.3 (p. 144)"
+      ]
     },
     {
-      "id": "MOD-PREVENT-RIPPLE",
-      "name": "Prevent ripple effects",
-      "target_attributes": ["modifiability"],
-      "mechanism": "Use stable interfaces, encapsulation, or dependency control to limit propagation of a change.",
-      "conditions": ["Coupling paths and interface ownership can be identified."],
-      "limitations": ["Abstraction can become costly or misleading when it does not correspond to real variation."],
-      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+      "id": "PERF-SCHEDULE-RESOURCES",
+      "name": "Schedule access to constrained resources",
+      "target_attributes": [
+        "performance-efficiency",
+        "time-behaviour",
+        "resource-utilization"
+      ],
+      "mechanism": "Choose an assignment order and sharing policy for work requesting scarce resources.",
+      "conditions": [
+        "Demand, deadlines, and allocation rules are measurable."
+      ],
+      "limitations": [
+        "Unfair scheduling or preemption overhead can harm some workloads."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §9.2, fig. 9.3 (p. 144)"
+      ]
     },
     {
-      "id": "MOD-DEFER-BINDING",
-      "name": "Defer binding time",
-      "target_attributes": ["modifiability"],
-      "mechanism": "Move a choice to a later lifecycle stage so it can be changed with less redevelopment.",
-      "conditions": ["The decision can safely remain configurable or replaceable until that stage."],
-      "limitations": ["Late binding shifts complexity to configuration, deployment, or runtime validation."],
-      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+      "id": "SAFE-ABORT",
+      "name": "Terminate an operation before it causes harm",
+      "target_attributes": [
+        "safety",
+        "operational-constraint",
+        "fail-safe"
+      ],
+      "mechanism": "Interrupt hazardous work when a safety condition is violated.",
+      "conditions": [
+        "Termination itself can leave the system safe."
+      ],
+      "limitations": [
+        "Effects already committed may require a recovery step."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
     },
     {
-      "id": "SEC-RESIST-ATTACKS",
-      "name": "Resist attacks",
-      "target_attributes": ["security"],
-      "mechanism": "Prevent unauthorized access or reduce attack opportunity through authentication, authorization, input validation, or isolation.",
-      "conditions": ["Assets, trust boundaries, and relevant threats are identified."],
-      "limitations": ["A control only addresses its stated threat model and can introduce usability or operational costs."],
-      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+      "id": "SAFE-COMPARE-OUTPUTS",
+      "name": "Detect unsafe divergences between synchronized outputs",
+      "target_attributes": [
+        "safety",
+        "risk-identification"
+      ],
+      "mechanism": "Compare redundant outputs to detect a mismatch before depending on them.",
+      "conditions": [
+        "The outputs are comparable and available within the required time."
+      ],
+      "limitations": [
+        "Shared faults may produce identical unsafe outputs."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
     },
     {
-      "id": "SEC-DETECT-ATTACKS",
-      "name": "Detect attacks",
-      "target_attributes": ["security"],
-      "mechanism": "Recognize suspicious activity through monitoring, audit, or anomaly detection and raise an actionable signal.",
-      "conditions": ["Relevant events can be observed and an operational response exists."],
-      "limitations": ["Detection does not prevent impact and may miss or misclassify activity."],
-      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+      "id": "SAFE-DEADLINE-CHECK",
+      "name": "Detect hazardous timing omissions",
+      "target_attributes": [
+        "safety",
+        "risk-identification"
+      ],
+      "mechanism": "Treat missed deadlines as indications that an operation may have failed or become unsafe.",
+      "conditions": [
+        "Timing bounds reflect the hazard analysis."
+      ],
+      "limitations": [
+        "Variable delays can cause false detections."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
     },
     {
-      "id": "SEC-RECOVER-ATTACKS",
-      "name": "Recover from attacks",
-      "target_attributes": ["security"],
-      "mechanism": "Restore trusted service or data after a security incident using recovery, isolation, or rollback mechanisms.",
-      "conditions": ["Recovery points, trusted state, and incident responsibilities are defined."],
-      "limitations": ["Recovery cannot undo disclosure and depends on the integrity of backups and procedures."],
-      "source_refs": ["Bass-Clements-Kazman-2021-SAiP-4e"]
+      "id": "SAFE-DIVERSE-ANALYSIS",
+      "name": "Use separate ways to determine a safe result",
+      "target_attributes": [
+        "safety",
+        "fail-safe"
+      ],
+      "mechanism": "Combine independent requirements, inputs, or calculations for the safety-relevant outcome.",
+      "conditions": [
+        "Comparing unlike signals can be done within the required assurance and time."
+      ],
+      "limitations": [
+        "Reconciliation is more complex and inputs may share dependencies."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "SAFE-DIVERSE-FUNCTIONS",
+      "name": "Provide independent implementations of a function",
+      "target_attributes": [
+        "safety",
+        "fail-safe"
+      ],
+      "mechanism": "Use design diversity to reduce shared implementation faults across components.",
+      "conditions": [
+        "Independent implementations can satisfy the same functional contract."
+      ],
+      "limitations": [
+        "Specification errors can cause correlated failure."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "SAFE-INTERLOCK",
+      "name": "Enforce safe operation sequences",
+      "target_attributes": [
+        "safety",
+        "operational-constraint"
+      ],
+      "mechanism": "Gate access to a protected operation until the required events and preconditions hold.",
+      "conditions": [
+        "The interlock can observe and control every relevant entry path."
+      ],
+      "limitations": [
+        "Incomplete observation or a failed interlock can block or admit work incorrectly."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "SAFE-ISOLATE-DOMAINS",
+      "name": "Place barriers between hazard domains",
+      "target_attributes": [
+        "safety",
+        "operational-constraint"
+      ],
+      "mechanism": "Separate components or propagation paths to contain the effects of unsafe behavior.",
+      "conditions": [
+        "The barrier covers the identified channels through which hazards can spread."
+      ],
+      "limitations": [
+        "Shared dependencies may still propagate an effect."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "SAFE-MASK",
+      "name": "Mask an unsafe output through redundancy",
+      "target_attributes": [
+        "safety",
+        "fail-safe"
+      ],
+      "mechanism": "Use redundant outputs and a selection rule to prevent one faulty output from reaching consumers.",
+      "conditions": [
+        "Enough independently correct outputs remain for the policy to work."
+      ],
+      "limitations": [
+        "A faulty voter or common cause can pass a dangerous output."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "SAFE-REPAIR-STATE",
+      "name": "Repair the fields needed for safe operation",
+      "target_attributes": [
+        "safety",
+        "fail-safe"
+      ],
+      "mechanism": "Identify damaged state and rebuild or correct it to reach a safe configuration.",
+      "conditions": [
+        "An authoritative source and conditions for safe continuation are known."
+      ],
+      "limitations": [
+        "Partial repair may preserve inconsistencies or lose detail."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "SAFE-REPLICATE",
+      "name": "Provide identical redundant components",
+      "target_attributes": [
+        "safety",
+        "fail-safe"
+      ],
+      "mechanism": "Use replicas to retain critical behavior when an individual component fails.",
+      "conditions": [
+        "Random failures are sufficiently independent and failure detection is adequate."
+      ],
+      "limitations": [
+        "Identical implementations share design defects."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "SAFE-SUBSTITUTE-PROTECTION",
+      "name": "Use a simpler independent protection mechanism",
+      "target_attributes": [
+        "safety",
+        "operational-constraint"
+      ],
+      "mechanism": "Move a protective function to an independent or more predictable component where feasible.",
+      "conditions": [
+        "The protected operation and assurance need can be isolated."
+      ],
+      "limitations": [
+        "The substitute still depends on its own interface and failure assumptions."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §10.2, fig. 10.3 (p. 157)"
+      ]
+    },
+    {
+      "id": "SEC-AUDIT",
+      "name": "Record activity for incident investigation",
+      "target_attributes": [
+        "security",
+        "accountability"
+      ],
+      "mechanism": "Record attributable security events so activity can be reconstructed later.",
+      "conditions": [
+        "Identity, event provenance, and protected log storage are available."
+      ],
+      "limitations": [
+        "Audit data can be incomplete, costly, or sensitive."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-AUTHENTICATE",
+      "name": "Verify claimed identity",
+      "target_attributes": [
+        "security",
+        "authenticity"
+      ],
+      "mechanism": "Require suitable proof of identity before creating an authenticated session or accepting a request.",
+      "conditions": [
+        "A trusted identity mechanism and recovery process are available."
+      ],
+      "limitations": [
+        "Compromised credentials or identity providers can defeat verification."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-AUTHORIZE",
+      "name": "Check permission for a requested action",
+      "target_attributes": [
+        "security",
+        "confidentiality",
+        "integrity"
+      ],
+      "mechanism": "Evaluate the verified actor's permission to act on the specified resource.",
+      "conditions": [
+        "The policy distinguishes actors, resources, and operations."
+      ],
+      "limitations": [
+        "An incomplete policy or bypass path can admit unauthorized actions."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-CHANGE-CREDENTIAL-SETTINGS",
+      "name": "Replace weak or exposed credential settings",
+      "target_attributes": [
+        "security",
+        "resistance",
+        "authenticity"
+      ],
+      "mechanism": "Change default or compromised credential settings and support safe updates.",
+      "conditions": [
+        "Credential ownership and update procedures are known."
+      ],
+      "limitations": [
+        "Changing credentials can affect dependent clients or lock out valid users."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-DETECT-DELIVERY-ANOMALIES",
+      "name": "Detect suspicious timing in message delivery",
+      "target_attributes": [
+        "security",
+        "resistance"
+      ],
+      "mechanism": "Flag timing anomalies that may signal interference in message delivery.",
+      "conditions": [
+        "Expected delay distributions are known."
+      ],
+      "limitations": [
+        "Congestion or clock drift can also introduce anomalies."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-DETECT-DENIAL",
+      "name": "Detect suspicious loss of service capacity",
+      "target_attributes": [
+        "security",
+        "resistance"
+      ],
+      "mechanism": "Monitor abnormal load or loss of availability to identify possible intentional resource exhaustion.",
+      "conditions": [
+        "Normal load and response thresholds are known."
+      ],
+      "limitations": [
+        "Demand surges may resemble attacks."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-DETECT-INTRUSION",
+      "name": "Detect patterns of unauthorized behavior",
+      "target_attributes": [
+        "security",
+        "resistance"
+      ],
+      "mechanism": "Compare observed activity with security signals and raise alarms for suspicious patterns.",
+      "conditions": [
+        "Relevant telemetry and response ownership are available."
+      ],
+      "limitations": [
+        "Signatures miss some attacks and can produce false positives."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-ENCRYPT-DATA",
+      "name": "Make sensitive data unreadable without authorized keys",
+      "target_attributes": [
+        "security",
+        "confidentiality"
+      ],
+      "mechanism": "Encrypt selected data at the boundaries required by the threat model and control access to keys.",
+      "conditions": [
+        "Key generation, distribution, storage, and rotation are defined."
+      ],
+      "limitations": [
+        "Compromised endpoints or keys can reveal data and encryption can add overhead."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-IDENTIFY-ACTORS",
+      "name": "Bind requests to actor identifiers",
+      "target_attributes": [
+        "security",
+        "authenticity",
+        "accountability"
+      ],
+      "mechanism": "Associate actors or components with distinct identities for later security decisions.",
+      "conditions": [
+        "Identifiers can be issued and managed consistently."
+      ],
+      "limitations": [
+        "An identifier presented by a requester still needs verification."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-INFORM-ACTORS",
+      "name": "Notify affected parties about a security incident",
+      "target_attributes": [
+        "security",
+        "resistance"
+      ],
+      "mechanism": "Send incident information to parties that can respond within an agreed workflow.",
+      "conditions": [
+        "The system can route notices to authorized recipients."
+      ],
+      "limitations": [
+        "Late or noisy notices delay effective response."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-LIMIT-ACCESS",
+      "name": "Constrain access to protected resources",
+      "target_attributes": [
+        "security",
+        "confidentiality",
+        "integrity"
+      ],
+      "mechanism": "Restrict paths or privileges through which actors can reach sensitive resources.",
+      "conditions": [
+        "All relevant access paths can be enforced consistently."
+      ],
+      "limitations": [
+        "Restrictions carry operational complexity and can be circumvented via uncontrolled paths."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-LIMIT-EXPOSURE",
+      "name": "Reduce reachable attack surfaces and damage paths",
+      "target_attributes": [
+        "security",
+        "resistance",
+        "confidentiality"
+      ],
+      "mechanism": "Limit which operations or data are exposed and bound the reach of each exposed interface.",
+      "conditions": [
+        "The threat model identifies exposure paths and required access."
+      ],
+      "limitations": [
+        "Exposure limits can reduce usability or flexibility."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-NON-REPUDIATION",
+      "name": "Retain verifiable evidence of an action",
+      "target_attributes": [
+        "security",
+        "non-repudiation",
+        "accountability"
+      ],
+      "mechanism": "Bind an action to its actor and preserve verifiable evidence of what occurred.",
+      "conditions": [
+        "Identity binding, time assumptions, and evidence retention are trustworthy."
+      ],
+      "limitations": [
+        "Compromised keys or missing evidence can undermine attribution."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-RESTRICT-LOGIN",
+      "name": "Limit access attempts after suspicious activity",
+      "target_attributes": [
+        "security",
+        "resistance",
+        "authenticity"
+      ],
+      "mechanism": "Throttle or temporarily restrict authentication attempts under a policy.",
+      "conditions": [
+        "Attempt tracking and recovery channels are available."
+      ],
+      "limitations": [
+        "Limits can block legitimate users or be exploited to trigger lockout."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-REVOKE-ACCESS",
+      "name": "Withdraw affected grants or sessions",
+      "target_attributes": [
+        "security",
+        "resistance",
+        "confidentiality",
+        "integrity"
+      ],
+      "mechanism": "Disable permissions, sessions, or credentials associated with a detected incident.",
+      "conditions": [
+        "The system can invalidate delegated or cached authority."
+      ],
+      "limitations": [
+        "Revocation can be delayed or disrupt legitimate work."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-SEPARATE-ENTITIES",
+      "name": "Isolate different trust domains",
+      "target_attributes": [
+        "security",
+        "confidentiality",
+        "integrity",
+        "resistance"
+      ],
+      "mechanism": "Separate data, privileges, or workloads so a compromise in one domain has limited reach.",
+      "conditions": [
+        "Boundaries and cross-domain exchanges are enforceable."
+      ],
+      "limitations": [
+        "Isolation is harder with shared privileges or uncontrolled dependencies."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-VALIDATE-INPUT",
+      "name": "Accept only input that satisfies declared constraints",
+      "target_attributes": [
+        "security",
+        "integrity",
+        "resistance"
+      ],
+      "mechanism": "Check input at trust boundaries against expected types, formats, and semantic rules.",
+      "conditions": [
+        "The receiving boundary knows the valid input contract."
+      ],
+      "limitations": [
+        "Incomplete checks leave unmodeled cases and validation adds work."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "SEC-VERIFY-INTEGRITY",
+      "name": "Check integrity of received data",
+      "target_attributes": [
+        "security",
+        "integrity"
+      ],
+      "mechanism": "Verify protected digests or authentication information before using data.",
+      "conditions": [
+        "The expected check value or key is obtained through a trusted channel."
+      ],
+      "limitations": [
+        "A checksum alone detects corruption rather than proving an origin."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §11.2, fig. 11.3 (p. 173)"
+      ]
+    },
+    {
+      "id": "TEST-ABSTRACT-DATA",
+      "name": "Allow tests to substitute data sources",
+      "target_attributes": [
+        "testability"
+      ],
+      "mechanism": "Access data through contracts that can be supplied by controlled test implementations.",
+      "conditions": [
+        "Test substitutes model the features required by the scenario."
+      ],
+      "limitations": [
+        "Differences between test and production data paths can conceal failures."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §12.2, fig. 12.4 (p. 191)"
+      ]
+    },
+    {
+      "id": "TEST-ASSERTIONS",
+      "name": "Check invariants during test execution",
+      "target_attributes": [
+        "testability",
+        "analysability"
+      ],
+      "mechanism": "Run assertions that report violated expectations close to the responsible operation.",
+      "conditions": [
+        "Expected invariants and useful diagnostics are defined."
+      ],
+      "limitations": [
+        "Assertions can be costly or omit failures outside their scope."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §12.2, fig. 12.4 (p. 191)"
+      ]
+    },
+    {
+      "id": "TEST-LIMIT-NONDETERMINISM",
+      "name": "Make test-relevant behavior reproducible",
+      "target_attributes": [
+        "testability"
+      ],
+      "mechanism": "Control variability such as time, scheduling, and external responses in tests.",
+      "conditions": [
+        "Sources of variability are identifiable and configurable."
+      ],
+      "limitations": [
+        "Artificial determinism can hide defects that occur under real scheduling."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §12.2, fig. 12.4 (p. 191)"
+      ]
+    },
+    {
+      "id": "TEST-LIMIT-STRUCTURE",
+      "name": "Reduce the structural states a test must cover",
+      "target_attributes": [
+        "testability"
+      ],
+      "mechanism": "Limit unnecessary control flow and interactions so tests can exercise meaningful combinations.",
+      "conditions": [
+        "The design identifies complexity that adds no required behavior."
+      ],
+      "limitations": [
+        "Simplification may move complexity across an interface."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §12.2, fig. 12.4 (p. 191)"
+      ]
+    },
+    {
+      "id": "TEST-LOCALIZE-STATE",
+      "name": "Keep test-relevant state in accessible locations",
+      "target_attributes": [
+        "testability",
+        "analysability"
+      ],
+      "mechanism": "Concentrate state or expose stable access so tests can establish and inspect it.",
+      "conditions": [
+        "The design identifies state that determines the expected behavior."
+      ],
+      "limitations": [
+        "Concentration can reduce isolation or increase contention."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §12.2, fig. 12.4 (p. 191)"
+      ]
+    },
+    {
+      "id": "TEST-RECORD-REPLAY",
+      "name": "Replay recorded interactions",
+      "target_attributes": [
+        "testability",
+        "analysability"
+      ],
+      "mechanism": "Capture enough events or inputs to reproduce a prior execution in a test.",
+      "conditions": [
+        "Relevant external effects and timing can be reproduced or simulated."
+      ],
+      "limitations": [
+        "Captures may omit sources of nondeterminism and can contain sensitive data."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §12.2, fig. 12.4 (p. 191)"
+      ]
+    },
+    {
+      "id": "TEST-SANDBOX",
+      "name": "Contain experiments in a test environment",
+      "target_attributes": [
+        "testability"
+      ],
+      "mechanism": "Run selected elements in a controlled environment with bounded external effects.",
+      "conditions": [
+        "Dependencies can be simulated or isolated safe substitutes are available."
+      ],
+      "limitations": [
+        "A sandbox may differ from the deployed environment."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §12.2, fig. 12.4 (p. 191)"
+      ]
+    },
+    {
+      "id": "TEST-SPECIALIZED-INTERFACES",
+      "name": "Expose controlled interfaces for testing",
+      "target_attributes": [
+        "testability",
+        "analysability"
+      ],
+      "mechanism": "Provide a controlled way for tests to set inputs or inspect internal state.",
+      "conditions": [
+        "Test access can be isolated or restricted and states have clear meaning."
+      ],
+      "limitations": [
+        "Test interfaces can create maintenance effort and security exposure."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §12.2, fig. 12.4 (p. 191)"
+      ]
+    },
+    {
+      "id": "UX-AGGREGATE",
+      "name": "Let users act on a group",
+      "target_attributes": [
+        "usability",
+        "interaction-capability",
+        "operability"
+      ],
+      "mechanism": "Support applying an operation to a selected set of related objects.",
+      "conditions": [
+        "Bulk effects and partial failure behavior are explicit."
+      ],
+      "limitations": [
+        "A mistaken bulk action can affect more items."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §13.2, fig. 13.3 (p. 202)"
+      ]
+    },
+    {
+      "id": "UX-CANCEL",
+      "name": "Allow users to cancel ongoing work",
+      "target_attributes": [
+        "usability",
+        "interaction-capability",
+        "operability"
+      ],
+      "mechanism": "Provide a means to interrupt an operation and recover control at a safe point.",
+      "conditions": [
+        "An operation can be interrupted or compensated safely."
+      ],
+      "limitations": [
+        "Some external effects cannot be cancelled immediately."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §13.2, fig. 13.3 (p. 202)"
+      ]
+    },
+    {
+      "id": "UX-PAUSE-RESUME",
+      "name": "Let a user interrupt and resume work",
+      "target_attributes": [
+        "usability",
+        "interaction-capability",
+        "operability"
+      ],
+      "mechanism": "Save progress and restore the operation after a user-requested pause.",
+      "conditions": [
+        "The operation has safe pause points and revivable state."
+      ],
+      "limitations": [
+        "Paused work can retain resources or expire."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §13.2, fig. 13.3 (p. 202)"
+      ]
+    },
+    {
+      "id": "UX-SYSTEM-MODEL",
+      "name": "Represent internal progress for feedback",
+      "target_attributes": [
+        "usability",
+        "interaction-capability",
+        "self-descriptiveness"
+      ],
+      "mechanism": "Track runtime state so the product can explain what it is doing and what to expect.",
+      "conditions": [
+        "Progress and meaningful states are observable."
+      ],
+      "limitations": [
+        "Estimates can mislead when operations are variable."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §13.2, fig. 13.3 (p. 202)"
+      ]
+    },
+    {
+      "id": "UX-TASK-MODEL",
+      "name": "Represent the user's task and progress",
+      "target_attributes": [
+        "usability",
+        "interaction-capability",
+        "self-descriptiveness"
+      ],
+      "mechanism": "Represent known workflows so the system can present guidance suitable to the active task.",
+      "conditions": [
+        "Common tasks and their states are modeled."
+      ],
+      "limitations": [
+        "Rigid workflows can frustrate unanticipated task paths."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §13.2, fig. 13.3 (p. 202)"
+      ]
+    },
+    {
+      "id": "UX-UNDO",
+      "name": "Allow users to reverse eligible actions",
+      "target_attributes": [
+        "usability",
+        "interaction-capability",
+        "operability"
+      ],
+      "mechanism": "Retain enough state or information to reverse supported operations.",
+      "conditions": [
+        "Reversibility and history bounds are agreed."
+      ],
+      "limitations": [
+        "Irreversible external effects require a different recovery path."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §13.2, fig. 13.3 (p. 202)"
+      ]
+    },
+    {
+      "id": "UX-USER-MODEL",
+      "name": "Adapt interaction to user preferences or skills",
+      "target_attributes": [
+        "usability",
+        "interaction-capability",
+        "learnability"
+      ],
+      "mechanism": "Maintain relevant preferences or inferred skill so the interaction can be tailored.",
+      "conditions": [
+        "Available signals and permitted use of user information are established."
+      ],
+      "limitations": [
+        "Inaccurate models can surface unsuitable behavior."
+      ],
+      "source_refs": [
+        "Bass, Clements, and Kazman (2021), 4th ed., §13.2, fig. 13.3 (p. 202)"
+      ]
     }
   ]
 }
