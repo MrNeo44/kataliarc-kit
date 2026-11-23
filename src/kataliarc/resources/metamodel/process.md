@@ -6,7 +6,7 @@ This document describes the process flow shared by the methodological skills. Se
 
 - The stakeholder provides context, needs, and constraints; the agent records their provenance.
 - The agent identifies drivers, missing information, assumptions, and risks before proposing designs.
-- If critical information is missing, ask the stakeholder or record the gap, assumptions, risks, and validation actions. Do not present a recommendation as settled when its basis is insufficient.
+- Pohl checks the supplied project sources before routing an unresolved requirement question to the stakeholder. Record remaining gaps, assumptions, risks, and validation actions. Keep any recommendation provisional while critical information remains unresolved.
 - Priorities are confirmed by the client representative. A priority is distinct from whether a constraint is mandatory.
 - Alternatives are compared against quality scenarios, constraints, and trade-offs. Review can send the work back for revision or validation.
 - The outcome includes its rationale, drivers, alternatives, trade-offs, missing information, assumptions, risks, evidence, and limits. Preserve provisional status when confirmation or evidence is missing.
@@ -15,7 +15,7 @@ This document describes the process flow shared by the methodological skills. Se
 
 | Stage | Owner | Work and domain concepts | Output / next step |
 |---|---|---|---|
-| Elicit and frame | Pohl | Gather `Stakeholder`, `BusinessProblem`, `BusinessGoal`, `BusinessRequirement`, `ArchitecturalContext`, and `ArchitecturalConstraint`; identify `ArchitecturalProblem`, `ArchitecturalDriver`, `QualityAttribute`, and measurable `QualityScenario`; mark unknowns and assumptions. | Update `.kataliarc/context.json` and `.kataliarc/context.md`; create/update `.kataliarc/utility-tree.json` as scenario-ID groupings. Ask for critical missing context; otherwise hand scenarios and constraints to Toulmin. |
+| Elicit and frame | Pohl | Gather `Stakeholder`, `BusinessProblem`, `BusinessGoal`, `BusinessRequirement`, `ArchitecturalContext`, and `ArchitecturalConstraint`; identify `ArchitecturalProblem`, `ArchitecturalDriver`, `QualityAttribute`, and measurable `QualityScenario`; mark unknowns and assumptions. | Update `.kataliarc/context.json` and `.kataliarc/context.md` and group scenario IDs in `.kataliarc/utility-tree.json`. Review the available sources and ask about gaps that still need stakeholder input. Hand scenarios and constraints to Toulmin when enough information is available. |
 | Confirm priorities | Pohl with client representative | Organize scenarios by quality attribute using `UtilityTreeBranch`; obtain confirmation for importance/difficulty priorities. | Store scenario details and priority in `context.json`; store only IDs and attribute names in `utility-tree.json`; then hand confirmed scenarios to Toulmin. |
 | Design and argue | Toulmin | Consult applicable `ArchitecturalKnowledge`; propose `ArchitecturalTactic` and `ArchitecturalPattern`; explain `PatternTacticInteraction` and `TacticInteraction`; assemble `ArchitecturalAlternative`; construct `ArchitecturalArgument`. | Produce tactics, alternatives, and arguments; hand them to Walton. Historical knowledge informs but does not establish current applicability. |
 | Evaluate | Walton | Judge each complete alternative with C1–C6 against each in-scope scenario. Record evidence, assumptions, critical questions, and supported ATAM-inspired findings. | Write `.kataliarc/evaluation.json` and `.kataliarc/evaluation.md`. The CLI validates coverage and applies R1–R4 per alternative. Only `MODIFICAR` triggers a bounded Toulmin refinement. |
@@ -28,11 +28,11 @@ This document describes the process flow shared by the methodological skills. Se
 
 ## Pohl elicitation sequence
 
-1. Read existing project context and identify its sources. Ask who supplied important statements when provenance is unclear.
+1. Read the existing project context and the relevant source material supplied for the project. Identify the provenance of important statements and record any uncertainty about their origin.
 2. Establish the business problem, goals, system boundary, team capabilities, technology environment, requirements, and constraints. Use the corresponding entities in `domain.json`; do not force unknown fields to invented values.
 3. Derive candidate architectural drivers and quality attributes from the stated goals, requirements, and constraints. Use [the ISO/IEC 25010 product quality model](iso-25010-2023.json) as a reference for standard names, and preserve project-specific attributes. Keep stakeholder statements distinct from agent interpretations.
 4. Elicit quality scenarios using stimulus, environment, response, response measure, acceptance criteria, and known context. Record missing information, assumptions, provenance, and evidence status.
-5. Identify whether information critical to safe design is missing. Ask targeted questions where possible. If unanswered, record the gap and its impact; do not silently fill it.
+5. Resolve requirement gaps when the supplied sources establish an answer and cite the source of each resolution. Ask a targeted stakeholder question only if the available information leaves a gap unresolved. Record the sources checked, the open question, and its impact on design.
 6. Ask the client representative to confirm scenario priorities. Until confirmed, leave priority pending/unknown. Keep mandatory constraints separate from priority.
 7. Group scenario IDs by quality attribute in the utility tree. The scenario definition and priority remain canonical in `context.json`; do not duplicate them in the tree.
 8. Hand the problem, context, constraints, and confirmed or explicitly pending scenarios to Toulmin. Do not propose tactics or alternatives as part of Pohl's role.
@@ -52,6 +52,6 @@ ATAM-inspired risks remain findings in the assessment. Experimental verification
 
 ## Feedback and stop conditions
 
-- During design, evaluation, or review, newly discovered requirements or changed assumptions return to Pohl for clarification and scenario updates.
+- During design, evaluation, or review, newly discovered requirements or changed assumptions return to Pohl for source review, stakeholder clarification when needed, and scenario updates.
 - If critical information prevents a responsible architectural recommendation, record the missing information, assumptions, risks, critical questions, and validation actions, and stop short of recommending an alternative.
 - A process stage may be skipped only when its inputs are already available and traceable; record that basis.

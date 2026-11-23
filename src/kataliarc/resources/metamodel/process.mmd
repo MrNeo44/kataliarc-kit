@@ -8,8 +8,9 @@ flowchart TB
     P1[Characterize context and business problem]
     P1 --> P2[Identify goals, requirements, constraints, and drivers]
     P2 --> P3[Identify missing information, assumptions, and risks]
-    P3 --> P4{Is critical information missing?}
-    P4 -- Yes --> P5[Record gaps and ask targeted questions]
+    P3 --> PSources[Review supplied sources and record supported resolutions]
+    PSources --> P4{Does a gap still need stakeholder input?}
+    P4 -- Yes --> P5[Record the unresolved gap and ask a targeted question]
     P5 --> P6{Can a responsible provisional assessment proceed?}
     P6 -- No --> P7[Prepare validation actions; issue no architecture recommendation]
     P7 --> PEnd((Stop pending information))

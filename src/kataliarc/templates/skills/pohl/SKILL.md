@@ -24,11 +24,12 @@ Before eliciting, read `.kataliarc/metamodel/process.md` and consult `.kataliarc
 
 Apply the requested phase directly in the current session.
 
-1. Review the stakeholder information in `.kataliarc/context.md` and the existing `.kataliarc/context.json`.
-2. During elicitation, structure context, requirements, constraints, and quality scenarios in `context.json`. Resolve or record gaps based on the available information.
-3. During prioritization, record stakeholder-confirmed priorities in `context.json` and group scenario IDs in `utility-tree.json`.
-4. Use `kataliarc validate` to check that the utility-tree references point to existing scenarios under the correct quality attributes.
-5. Report what is ready for Toulmin and any open questions.
+1. Review the stakeholder information in `.kataliarc/context.md`, the existing `.kataliarc/context.json`, and the relevant sources supplied for the project.
+2. During elicitation, structure context, requirements, constraints, and quality scenarios in `context.json`. Resolve requirement gaps that the supplied sources can answer and cite the source of each resolution.
+3. Ask the stakeholder a targeted question only when the sources leave a requirement gap unresolved. Record the sources checked, the open question, and its impact. When delegated, pass the question to the coordinating session.
+4. During prioritization, record stakeholder-confirmed priorities in `context.json` and group scenario IDs in `utility-tree.json`.
+5. Use `kataliarc validate` to check that the utility-tree references point to existing scenarios under the correct quality attributes.
+6. Report what is ready for Toulmin and any open questions.
 
 Preserve provenance and missing information; do not turn inferences into facts. Set priority to `A`, `M`, or `B` only when the client representative confirms it. Keep `mandatory` separate from priority. When prioritizing, update priority in `context.json` and keep the utility tree as ID references only.
 

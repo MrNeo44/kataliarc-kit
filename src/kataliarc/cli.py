@@ -359,7 +359,12 @@ def validate() -> int:
 
 
 PROMPTS = {
-    "elicit": "Lee context.md y completa context.json solo con información proporcionada. Marca incertidumbre y no inventes requisitos.",
+    "elicit": (
+        "Lee .kataliarc/context.md, .kataliarc/context.json y las fuentes relevantes suministradas para el proyecto. "
+        "Resuelve con esas fuentes las dudas sobre requisitos que puedas aclarar y registra su procedencia en context.json. "
+        "Formula una pregunta concreta para el usuario solo si la duda sigue abierta después de revisar las fuentes. "
+        "Registra las dudas pendientes y su impacto."
+    ),
     "prioritize": "Actualiza la prioridad en context.json solo cuando el cliente la haya confirmado. Organiza utility-tree.json como ramas por atributo con scenario_ids únicamente; si encuentras el formato antiguo con escenarios copiados, conviértelo preservando sus IDs y orden. No copies descripciones, restricciones ni prioridades. No asignes prioridad A/M/B si no está confirmada.",
     "design": "Desde todos los escenarios propone tácticas, argumentos Toulmin, interacciones y 2-3 alternativas ensambladas. Distingue hipótesis de evidencia.",
     "evaluate": "Evalúa cada alternativa completa con C1–C6 de .kataliarc/metamodel/walton-rubric.json y el contrato .kataliarc/schemas/evaluation.schema.json. Registra un assessment por alternativa y escenario del árbol de utilidad, confirmado, obligatorio o afectado. Evalúa cada combinación por sus interacciones. Registra justificaciones, fuentes, supuestos, hallazgos ATAM y preguntas críticas de Walton. Escribe .kataliarc/evaluation.json y la explicación en evaluation.md. KatalIArc calcula alternative_results.",
@@ -367,7 +372,12 @@ PROMPTS = {
     "decide": "Integra la evaluación y revisión, citando los alternative_results ya calculados en .kataliarc/evaluation.json. Describe diferencias, trade-offs, riesgos y pendientes. Si varias candidatas están en MANTENER, documenta las diferencias para la decisión humana. Escribe la recomendación en decision.json y decision.md. Trata evaluation.json como solo lectura y conserva los ADR en PROPOSED.",
 }
 PROMPTS_EN = {
-    "elicit": "Read context.md and complete context.json only from provided information. Mark uncertainty; do not invent requirements.",
+    "elicit": (
+        "Read .kataliarc/context.md, .kataliarc/context.json, and the relevant sources supplied for the project. "
+        "Use those sources to resolve requirement gaps wherever possible and cite their provenance in context.json. "
+        "Prepare a targeted question for the user only when the gap remains unresolved after reviewing the sources. "
+        "Record open questions and their impact."
+    ),
     "prioritize": "Update scenario priorities in context.json only when the client has confirmed them. Build utility-tree.json as quality-attribute branches containing scenario_ids only; if the legacy format with copied scenarios exists, convert it while preserving IDs and ordering. Do not copy descriptions, constraints, or priorities. Do not assign A/M/B unless confirmed.",
     "design": "From all scenarios, propose tactics, Toulmin arguments, interactions, and 2-3 assembled alternatives. Distinguish hypotheses from evidence.",
     "evaluate": "Evaluate each complete alternative with C1–C6 from .kataliarc/metamodel/walton-rubric.json and .kataliarc/schemas/evaluation.schema.json. Assess each alternative against each utility-tree, confirmed, mandatory, or affected scenario. Evaluate each combination through its interactions. Record reasoning, evidence, assumptions, ATAM findings and Walton critical questions. Write .kataliarc/evaluation.json and the narrative in evaluation.md. KatalIArc calculates alternative_results.",
